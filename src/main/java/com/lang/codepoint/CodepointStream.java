@@ -164,46 +164,6 @@ public abstract class CodepointStream extends ObjectBuffer {
         return true;
     }
 
-    public int expect(int value) {
-        int current = peek();
-        if (current != value) {
-            throw new IllegalStateException("Expected '" + Codepoint.toString(value) + "' but found '" + Codepoint.toString(current) + "'");
-        }
-        advance();
-        return current;
-    }
-
-    public int expectAny(int... values) {
-        int current = peek();
-        for (int value : values) {
-            if (current == value) {
-                advance();
-                return current;
-            }
-        }
-        StringBuilder expected = new StringBuilder();
-        for (int i = 0; i < values.length; i++) {
-            if (i > 0) expected.append(", ");
-            expected.append("'").append(Codepoint.toString(values[i])).append("'");
-        }
-        throw new IllegalStateException("Expected one of [" + expected + "] but found '" + Codepoint.toString(current) + "'");
-    }
-
-    public int[] expectSequence(int... values) {
-        if (values == null || values.length == 0) {
-            throw new IllegalArgumentException("At least one value must be provided");
-        }
-        if (!checkSequence(values)) {
-            int current = peek();
-            throw new IllegalStateException("Expected sequence starting with " + Codepoint.toString(values[0]) + " but found " + Codepoint.toString(current));
-        }
-        int[] result = new int[values.length];
-        for (int i = 0; i < values.length; i++) {
-            result[i] = advance();
-        }
-        return result;
-    }
-
     public boolean isAtEnd() {
         return !hasNext();
     }

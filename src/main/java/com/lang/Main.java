@@ -2,7 +2,7 @@ package com.lang;
 
 import com.lang.evaluator.Evaluator;
 import com.lang.lexer.Lexer;
-import com.lang.module.Module;
+import com.lang.library.StandardLibrary;
 import com.lang.module.ModuleLoader;
 import com.lang.parser.Parser;
 import com.lang.source.SourceStream;
@@ -227,7 +227,7 @@ public class Main {
         }
 
         Evaluator evaluator = new Evaluator();
-        BlockValue entry = new BlockValue(null, evaluator.getGlobal());
+        BlockValue entry = new BlockValue();
 
         BlockValue argsBlock = new BlockValue();
         for (int i = 0; i < Main.args.size(); i++) {
@@ -237,9 +237,7 @@ public class Main {
         entry.set("args", argsBlock);
 
         entry.set("__filepath", Value.ofString(entryFile.getAbsolutePath()));
-        entry.set("include", Module.INCLUDE);
-        entry.set("import", Module.IMPORT);
-        entry.set("export", Module.EXPORT);
+        StandardLibrary.getInstance().open(entry);
 
         System.out.println("--- Execution ---");
         ValueResult result = evaluator.evaluate(unit.getProgram(), entry);

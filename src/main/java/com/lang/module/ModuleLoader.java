@@ -3,6 +3,7 @@ package com.lang.module;
 
 import com.lang.evaluator.Evaluator;
 import com.lang.lexer.Lexer;
+import com.lang.library.StandardLibrary;
 import com.lang.parser.Parser;
 import com.lang.source.SourceStream;
 import com.lang.unit.CompilationUnit;
@@ -76,12 +77,11 @@ public class ModuleLoader {
         Module module = new Module(name, file.getAbsolutePath(), unit.getProgram());
         cache.put(name, module);
 
-        BlockValue scope = new BlockValue(null, evaluator.getGlobal());
+        BlockValue scope = new BlockValue();
+
+        StandardLibrary.getInstance().open(scope);
 
         scope.set("__filepath", Value.ofString(module.getPath()));
-        scope.set("include", Module.INCLUDE);
-        scope.set("import", Module.IMPORT);
-        scope.set("export", Module.EXPORT);
 
         ValueResult result = evaluator.evaluate(module.getProgram(), scope);
 

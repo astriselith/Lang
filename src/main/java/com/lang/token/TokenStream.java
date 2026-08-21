@@ -174,49 +174,6 @@ public abstract class TokenStream extends ObjectBuffer {
         return true;
     }
 
-    public Token expect(int type) {
-        Token token = (Token) offset(0);
-        if (token == null || token.type != type) {
-            throw new IllegalStateException("Expected " + Token.typeName(type) + " but found "
-                    + (token != null ? Token.typeName(token.type) : "EOF") + " at " + token.position.toString());
-        }
-        next();
-        return token;
-    }
-
-    public Token expectAny(int... types) {
-        if (types == null || types.length == 0) {
-            throw new IllegalArgumentException("At least one type must be provided");
-        }
-        Token token = (Token) offset(0);
-        if (token != null) {
-            for (int type : types) {
-                if (token.type == type) {
-                    next();
-                    return token;
-                }
-            }
-        }
-        throw new IllegalStateException("Unexpected token: " + (token != null ? Token.typeName(token.type) : "EOF")
-                + " at " + token.position.toString());
-    }
-
-    public Token[] expectSequence(int... types) {
-        if (types == null || types.length == 0) {
-            throw new IllegalArgumentException("At least one type must be provided");
-        }
-        if (!checkSequence(types)) {
-            Token token = (Token) offset(0);
-            throw new IllegalStateException("Expected sequence starting with " + Token.typeName(types[0])
-                    + " but found " + (token != null ? Token.typeName(token.type) : "EOF"));
-        }
-        Token[] tokens = new Token[types.length];
-        for (int i = 0; i < types.length; i++) {
-            tokens[i] = (Token) next();
-        }
-        return tokens;
-    }
-
     public boolean isAtEnd() {
         return !hasNext();
     }

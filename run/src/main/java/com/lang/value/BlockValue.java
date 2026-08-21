@@ -1,0 +1,171 @@
+package com.lang.value;
+
+import com.lang.ast.Attach;
+import com.lang.ast.BlockExpr;
+import com.lang.ast.Expr;
+import com.lang.ast.Param;
+import com.lang.context.Context;
+
+import java.util.*;
+
+public class BlockValue extends Value {
+    protected final BlockExpr block;
+    protected final Map<String, Value> locals;
+    protected final BlockValue parent;
+
+    public BlockValue() {
+        this(null, null);
+    }
+
+    public BlockValue(BlockExpr block, BlockValue parent) {
+        this.block = block;
+        this.parent = parent;
+        this.locals = new HashMap<>();
+    }
+
+    @Override
+    public String toLString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        if (block != null && block.parameters != null) {
+            for (int i = 0; i < block.parameters.size(); i++) {
+                if (i > 0)
+                    sb.append(", ");
+                sb.append(block.parameters.get(i).name.source);
+            }
+        }
+        sb.append(") -> { ... }");
+        return sb.toString();
+    }
+
+    public Value get(String name) {
+        if (locals.containsKey(name)) {
+            return locals.get(name);
+        }
+        if (parent != null) {
+            return parent.get(name);
+        }
+        return null;
+    }
+
+    public boolean has(String name) {
+        if (locals.containsKey(name)) {
+            return true;
+        }
+        if (parent != null) {
+            return parent.has(name);
+        }
+        return false;
+    }
+
+    public void set(String name, Value value) {
+        if (locals.containsKey(name)) {
+            locals.put(name, value);
+            return;
+        }
+
+        if (parent != null && parent.has(name)) {
+            parent.set(name, value);
+            return;
+        }
+
+        locals.put(name, value);
+    }
+
+    public Value getLocal(String name) {
+        return locals.get(name);
+    }
+
+    public boolean hasLocal(String name) {
+        return locals.containsKey(name);
+    }
+
+    public void setLocal(String name, Value value) {
+        locals.put(name, value);
+    }
+
+    public Map<String, Value> getLocals() {
+        return locals;
+    }
+
+    public BlockValue getParent() {
+        return parent;
+    }
+
+    public BlockExpr getBlock() {
+        return block;
+    }
+
+    public List<Param> getParameters() {
+        return block != null ? block.parameters : new ArrayList<>();
+    }
+
+    public List<Attach> getAttachments() {
+        return block != null ? block.attachments : new ArrayList<>();
+    }
+
+    public List<Expr> getExpressions() {
+        return block != null ? block.expressions : new ArrayList<>();
+    }
+
+    public ValueResult call(
+            Context ctx,
+            List<Expr> arguments,
+            List<Expr> bindings) {
+
+        int paramCount = block.parameters.size();
+
+        if (paramCount != arguments.size()) {
+            throw new RuntimeException(
+                    "Expected "
+                            + paramCount
+                            + " arguments, got "
+                            + arguments.size());
+        }
+
+        if (block.attachments.size() != bindings.size()) {
+            throw new RuntimeException(
+                    "Expected "
+                            + block.attachments.size()
+                            + " attachments, got "
+                            + bindings.size());
+        }
+
+        BlockValue newBlock = new BlockValue(block, parent);
+
+        for (int i = 0; i < paramCount; i++) {
+            String name = block.parameters.get(i).name.source;
+            ValueResult argResult = (ValueResult) arguments.get(i).accept(ctx.visitor());
+            if (argResult.isLaunched()) {
+                return argResult;
+            }
+            newBlock.set(name, argResult.getValue());
+
+        }
+
+        for (int i = 0; i < bindings.size(); i++) {
+            String name = block.attachments.get(i).name.source;
+            ValueResult bindResult = (ValueResult) bindings.get(i).accept(ctx.visitor());
+            if (bindResult.isLaunched()) {
+                return bindResult;
+            }
+            newBlock.set(name, bindResult.getValue());
+        }
+
+        ctx.stack().push(newBlock);
+
+        for (Expr expression : block.expressions) {
+            ValueResult result = (ValueResult) expression.accept(ctx.visitor());
+
+            if (result.isLaunched()) {
+                ctx.stack().pop();
+                return result;
+            }
+        }
+        ctx.stack().pop();
+
+        return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
+
+    }
+
+}

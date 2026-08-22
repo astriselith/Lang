@@ -1,13 +1,16 @@
 package com.lang.library;
 
 import com.lang.value.BlockValue;
+import com.lang.ast.BlockExpr;
 import com.lang.ast.Expr;
+import com.lang.ast.RefExpr;
 import com.lang.context.Context;
 import com.lang.module.ModuleLoader;
 import com.lang.value.Value;
 import com.lang.value.ValueResult;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -81,6 +84,99 @@ public final class StandardLibrary implements Library {
         }
     };
 
+    private static final BlockValue FUN = new BlockValue() {
+
+        @Override
+        public ValueResult call(Context ctx, List<Expr> arguments, List<Expr> bindings) {
+
+            if (bindings.isEmpty()) {
+                throw new RuntimeException("fun() requires at least one attachment (the function body)");
+            }
+
+            Expr body = bindings.get(bindings.size() - 1);
+
+            if (!(body instanceof BlockExpr)) {
+                throw new RuntimeException("fun() last attachment must be a BlockExpr");
+            }
+
+            List<RefExpr> params = new ArrayList<>();
+            List<RefExpr> attachments = new ArrayList<>();
+
+            for (Expr arg : arguments) {
+                if (!(arg instanceof RefExpr)) {
+                    throw new RuntimeException("fun() arguments must be RefExpr");
+                }
+
+                params.add((RefExpr) arg);
+            }
+
+            for (int i = 0; i < bindings.size() - 1; i++) {
+                Expr binding = bindings.get(i);
+
+                if (!(binding instanceof RefExpr)) {
+                    throw new RuntimeException("fun() attachments must be RefExpr");
+                }
+
+                attachments.add((RefExpr) binding);
+            }
+
+            BlockValue function = new BlockValue(null, ctx.stack().peek()) {
+
+                @Override
+                public ValueResult call(Context ctx, List<Expr> args, List<Expr> binds) {
+
+                    if (args.size() != params.size()) {
+                        throw new RuntimeException("Expected " + params.size() + " arguments, got " + args.size());
+                    }
+
+                    if (binds.size() != attachments.size()) {
+                        throw new RuntimeException("Expected " + attachments.size() + " bindings, got " + binds.size());
+                    }
+
+                    BlockValue scope = new BlockValue(null, this);
+
+                    for (int i = 0; i < params.size(); i++) {
+
+                        ValueResult result = (ValueResult) args.get(i).accept(ctx.visitor());
+
+                        if (result.isLaunched()) {
+                            return result;
+                        }
+
+                        scope.setLocal(params.get(i).name.source, result.getValue());
+                    }
+
+                    for (int i = 0; i < attachments.size(); i++) {
+
+                        ValueResult result = (ValueResult) binds.get(i).accept(ctx.visitor());
+
+                        if (result.isLaunched()) {
+                            return result;
+                        }
+
+                        scope.setLocal(attachments.get(i).name.source, result.getValue());
+                    }
+
+                    ctx.stack().push(scope);
+
+                    ValueResult result = new BlockValue((BlockExpr) body, scope).call(ctx, Collections.emptyList(),
+                            Collections.emptyList());
+
+                    ctx.stack().pop();
+
+                    if (result.isLaunched() && "return".equals(result.getId())) {
+
+                        return ValueResult.of(ValueResult.NORMAL, null, result.getValue());
+                    }
+
+                    return result;
+                }
+            };
+
+            return ValueResult.of(ValueResult.NORMAL, null, function);
+        }
+    };
+
     private static final BlockValue IF = new BlockValue() {
         @Override
         public ValueResult call(Context ctx, List<Expr> arguments, List<Expr> bindings) {
@@ -89,8 +185,7 @@ public final class StandardLibrary implements Library {
             }
 
             if (bindings.size() != 1 && bindings.size() != 2) {
-                throw new RuntimeException(
-                        "if(condition) requires only 1 or 2 bindings (then) or (then, else)");
+                throw new RuntimeException("if(condition) requires only 1 or 2 bindings (then) or (then, else)");
             }
 
             ValueResult condResult = (ValueResult) arguments.get(0).accept(ctx.visitor());
@@ -103,8 +198,7 @@ public final class StandardLibrary implements Library {
                 throw new RuntimeException("if() condition must be boolean");
             }
 
-            Expr chosen = bindings.size() == 1
-                    ? (cond.toLBool() ? bindings.get(0) : null)
+            Expr chosen = bindings.size() == 1 ? (cond.toLBool() ? bindings.get(0) : null)
                     : (cond.toLBool() ? bindings.get(0) : bindings.get(1));
 
             if (chosen == null) {
@@ -133,8 +227,7 @@ public final class StandardLibrary implements Library {
             }
 
             if (bindings.size() != 1) {
-                throw new RuntimeException(
-                        "while(condition) requires 1 attachment (body)");
+                throw new RuntimeException("while(condition) requires 1 attachment (body)");
             }
 
             Expr condition = arguments.get(0);
@@ -147,10 +240,7 @@ public final class StandardLibrary implements Library {
 
                 if (condResult.isLaunched()) {
                     if (condResult.getId().equals("break")) {
-                        result = ValueResult.of(
-                                ValueResult.NORMAL,
-                                null,
-                                condResult.getValue());
+                        result = ValueResult.of(ValueResult.NORMAL, null, condResult.getValue());
                         break;
                     } else if (condResult.getId().equals("continue")) {
                         continue;
@@ -173,10 +263,7 @@ public final class StandardLibrary implements Library {
 
                 if (bodyResult.isLaunched()) {
                     if (bodyResult.getId().equals("break")) {
-                        result = ValueResult.of(
-                                ValueResult.NORMAL,
-                                null,
-                                bodyResult.getValue());
+                        result = ValueResult.of(ValueResult.NORMAL, null, bodyResult.getValue());
                         break;
                     } else if (bodyResult.getId().equals("continue")) {
                         continue;
@@ -188,12 +275,7 @@ public final class StandardLibrary implements Library {
                 Value bodyValue = bodyResult.getValue();
 
                 if (bodyValue != null && bodyValue.isBlock()) {
-                    result = bodyValue
-                            .asBlock()
-                            .call(
-                                    ctx,
-                                    new ArrayList<>(),
-                                    new ArrayList<>());
+                    result = bodyValue.asBlock().call(ctx, new ArrayList<>(), new ArrayList<>());
                 } else {
                     result = ValueResult.of(ValueResult.NORMAL, null, bodyValue);
                 }
@@ -257,23 +339,6 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue CAPTURE = new BlockValue() {
-        @Override
-        public ValueResult call(Context ctx, List<Expr> arguments, List<Expr> bindings) {
-            if (arguments.size() != 1) {
-                throw new RuntimeException("capture(expr) expects 1 argument");
-            }
-
-            ValueResult result = (ValueResult) arguments.get(0).accept(ctx.visitor());
-
-            if (result.isLaunched() && result.getId().equals("return")) {
-                return ValueResult.of(ValueResult.NORMAL, null, result.getValue());
-            }
-
-            return result;
-        }
-    };
-
     private static final BlockValue RETURN = new BlockValue() {
         @Override
         public ValueResult call(Context ctx, List<Expr> arguments, List<Expr> bindings) {
@@ -310,8 +375,7 @@ public final class StandardLibrary implements Library {
                 return valueResult;
             }
 
-            return ValueResult.of(
-                    ValueResult.LAUNCHED, id.toLString(), valueResult.getValue());
+            return ValueResult.of(ValueResult.LAUNCHED, id.toLString(), valueResult.getValue());
         }
     };
 
@@ -361,6 +425,9 @@ public final class StandardLibrary implements Library {
         block.set("import", IMPORT);
         block.set("export", EXPORT);
 
+        block.set("fun", FUN);
+        block.set("return", RETURN);
+
         block.set("if", IF);
         block.set("while", WHILE);
         block.set("break", BREAK);
@@ -368,9 +435,6 @@ public final class StandardLibrary implements Library {
 
         block.set("println", PRINTLN);
         block.set("readln", READLN);
-
-        block.set("capture", CAPTURE);
-        block.set("return", RETURN);
 
         block.set("launch", LAUNCH);
         block.set("finalize", FINALIZE);

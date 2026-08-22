@@ -1,9 +1,8 @@
 package com.lang.value;
 
-import com.lang.ast.Attach;
 import com.lang.ast.BlockExpr;
 import com.lang.ast.Expr;
-import com.lang.ast.Param;
+import com.lang.ast.RefExpr;
 import com.lang.context.Context;
 
 import java.util.*;
@@ -11,6 +10,7 @@ import java.util.*;
 public class BlockValue extends Value {
     protected final BlockExpr block;
     protected final Map<String, Value> locals;
+    protected final Set<String> collectors;
     protected final BlockValue parent;
 
     public BlockValue() {
@@ -21,6 +21,7 @@ public class BlockValue extends Value {
         this.block = block;
         this.parent = parent;
         this.locals = new HashMap<>();
+        this.collectors = new HashSet<>();
     }
 
     @Override
@@ -88,6 +89,18 @@ public class BlockValue extends Value {
         return locals;
     }
 
+    public void setCollector(String id) {
+        collectors.add(id);
+    }
+
+    public boolean hasCollector(String id) {
+        return collectors.contains(id);
+    }
+
+    public Set<String> getCollectors() {
+        return collectors;
+    }
+
     public BlockValue getParent() {
         return parent;
     }
@@ -96,11 +109,11 @@ public class BlockValue extends Value {
         return block;
     }
 
-    public List<Param> getParameters() {
+    public List<RefExpr> getParameters() {
         return block != null ? block.parameters : new ArrayList<>();
     }
 
-    public List<Attach> getAttachments() {
+    public List<RefExpr> getAttachments() {
         return block != null ? block.attachments : new ArrayList<>();
     }
 
@@ -159,7 +172,12 @@ public class BlockValue extends Value {
 
             if (result.isLaunched()) {
                 ctx.stack().pop();
-                return result;
+
+                if (collectors.contains(result.getId()))
+                    return ValueResult.of(ValueResult.NORMAL, null, result.getValue());
+                else {
+                    return result;
+                }
             }
         }
         ctx.stack().pop();

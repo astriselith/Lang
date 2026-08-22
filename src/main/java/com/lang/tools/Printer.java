@@ -14,7 +14,8 @@ public class Printer implements ExprVisitor {
     }
 
     private String indent() {
-        if (indent == 0) return "";
+        if (indent == 0)
+            return "";
         int dashes = 3 + (indent - 1) * 4;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < dashes; i++) {
@@ -25,7 +26,8 @@ public class Printer implements ExprVisitor {
 
     @Override
     public Object visitLiteralExpr(LiteralExpr expr) {
-        if (expr.value == null) return "null";
+        if (expr.value == null)
+            return "null";
         return expr.value;
     }
 
@@ -57,7 +59,8 @@ public class Printer implements ExprVisitor {
         if (expr.hasParens) {
             sb.append("(");
             for (int i = 0; i < expr.arguments.size(); i++) {
-                if (i > 0) sb.append(", ");
+                if (i > 0)
+                    sb.append(", ");
                 sb.append((String) expr.arguments.get(i).accept(this));
             }
             sb.append(")");
@@ -66,7 +69,8 @@ public class Printer implements ExprVisitor {
         if (expr.hasColon) {
             sb.append(": ");
             for (int i = 0; i < expr.bindings.size(); i++) {
-                if (i > 0) sb.append(" :: ");
+                if (i > 0)
+                    sb.append(" :: ");
                 sb.append((String) expr.bindings.get(i).accept(this));
             }
         }
@@ -86,9 +90,9 @@ public class Printer implements ExprVisitor {
         if (expr.hasParens) {
             sb.append("(");
             for (int i = 0; i < expr.parameters.size(); i++) {
-                if (i > 0) sb.append(", ");
-                Param param = expr.parameters.get(i);
-                sb.append(param.name.source);
+                if (i > 0)
+                    sb.append(", ");
+                sb.append(expr.parameters.get(i).accept(this));
             }
             sb.append(")");
         }
@@ -96,9 +100,9 @@ public class Printer implements ExprVisitor {
         if (expr.hasColon) {
             sb.append(": ");
             for (int i = 0; i < expr.attachments.size(); i++) {
-                if (i > 0) sb.append(" :: ");
-                Attach attach = expr.attachments.get(i);
-                sb.append(attach.name.source);
+                if (i > 0)
+                    sb.append(" :: ");
+                sb.append(expr.attachments.get(i).accept(this));
             }
         }
 

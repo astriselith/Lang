@@ -1,7 +1,7 @@
 
 Input = {};
 
-Input.read = (message) -> {
+Input.read = fun(message): {
     println(message);
     line = readln();
     println();

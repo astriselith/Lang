@@ -336,8 +336,8 @@ public class Parser {
         boolean hasArrow = false;
         boolean isSingleExpr = false;
 
-        List<Param> params = new ArrayList<>();
-        List<Attach> attachments = new ArrayList<>();
+        List<RefExpr> params = new ArrayList<>();
+        List<RefExpr> attachments = new ArrayList<>();
 
         if (stream.match(LPAREN)) {
             hasParens = true;
@@ -345,10 +345,8 @@ public class Parser {
                 if (!stream.check(IDENTIFIER)) {
                     throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek().lexeme), stream.peek());
                 }
-                Token nameToken = stream.advance();
-                params.add(
-                        new Param(
-                                new Identifier(nameToken.lexeme, pos(nameToken)), pos(nameToken)));
+
+                params.add(ref());
                 if (!stream.match(COMMA)) {
                     break;
                 }
@@ -366,10 +364,7 @@ public class Parser {
                 if (!stream.check(IDENTIFIER)) {
                     throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek().lexeme), stream.peek());
                 }
-                Token nameToken = stream.advance();
-                attachments.add(
-                        new Attach(
-                                new Identifier(nameToken.lexeme, pos(nameToken)), pos(nameToken)));
+                attachments.add(ref());
                 if (!stream.matchSequence(COLON, COLON)) {
                     break;
                 }

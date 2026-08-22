@@ -1,10 +1,20 @@
-Input = import("./Input.l");
+// Input = import("./Input.l");
 include("./CFlow.l");
 
 println("Preencha algumas informações");
 
-name = capture(Input.read("Nome: "));
-age = capture(Input.read("Age: "));
+// name = Input.read("Nome: ");
+// age = Input.read("Age: ");
+
+read = fun(message): {
+    println(message);
+    line = readln();
+    println();
+    return(line);
+};
+
+name = read("Nome: ");
+age = read("Idade: ");
 
 try: {
 	assert(name != "", "O nome não foi preenchido");

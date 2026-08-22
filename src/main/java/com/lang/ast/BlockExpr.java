@@ -4,8 +4,8 @@ import java.util.List;
 import com.lang.util.Position;
 
 public class BlockExpr extends Expr {
-    public List<Param> parameters;
-    public List<Attach> attachments;
+    public List<RefExpr> parameters;
+    public List<RefExpr> attachments;
     public List<Expr> expressions;
     public boolean hasParens;
     public boolean hasColon;
@@ -15,9 +15,9 @@ public class BlockExpr extends Expr {
     public BlockExpr() {
     }
 
-    public BlockExpr(List<Param> parameters, List<Attach> attachments, List<Expr> expressions,
-                     boolean hasParens, boolean hasColon, boolean hasArrow, boolean isSingleExpr,
-                     Position position) {
+    public BlockExpr(List<RefExpr> parameters, List<RefExpr> attachments, List<Expr> expressions,
+            boolean hasParens, boolean hasColon, boolean hasArrow, boolean isSingleExpr,
+            Position position) {
         super(position);
         this.parameters = parameters;
         this.attachments = attachments;

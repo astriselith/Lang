@@ -2,22 +2,14 @@ include("./CFlow.l");
 
 println("Preencha algumas informações");
 
-ret = (v) -> {
-	launch("ret", v);
-};
-
-cap = (v) -> {
-	finalize("ret", v);
-};
-
 read = (message) -> {
     print(message);
     line = readln();
-    ret(line);
+    launch("ret", line);
 };
 
-name = cap(read("Nome: "));
-age = cap(read("Idade: "));
+name = finalize("ret", read("Nome: "));
+age = finalize("ret", read("Idade: "));
 
 println();
 

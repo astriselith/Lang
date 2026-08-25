@@ -3,7 +3,6 @@ package com.lang;
 import com.lang.evaluator.Evaluator;
 import com.lang.lexer.Lexer;
 import com.lang.library.StandardLibrary;
-import com.lang.module.ModuleLoader;
 import com.lang.parser.Parser;
 import com.lang.source.SourceStream;
 import com.lang.tools.Printer;
@@ -24,6 +23,8 @@ public class Main {
     private static String workingDir;
     private static String entryPoint;
     private static List<String> args = new ArrayList<>();
+
+    private static final Scanner SCANNER = new Scanner(System.in);
 
     private static String baseDir;
 
@@ -58,12 +59,11 @@ public class Main {
     }
 
     private static void runCliLoop() {
-        Scanner scanner = new Scanner(System.in);
         String lastCommandLine = "";
 
         while (true) {
             System.out.print("lang> ");
-            String input = scanner.nextLine().trim();
+            String input = SCANNER.nextLine().trim();
 
             if (input.equalsIgnoreCase("exit") || input.equalsIgnoreCase("quit")) {
                 break;
@@ -204,8 +204,6 @@ public class Main {
             throw new RuntimeException("Working directory not found: " + workingDir);
         }
 
-        ModuleLoader loader = ModuleLoader.newInstance(workingDir);
-
         File entryFile = resolveEntryPoint(entryPoint);
         if (entryFile == null) {
             throw new RuntimeException("Entry point not found: " + entryPoint);
@@ -226,7 +224,7 @@ public class Main {
             System.out.println();
         }
 
-        Evaluator evaluator = new Evaluator();
+        Evaluator evaluator = new Evaluator(workingDir);
         BlockValue entry = new BlockValue();
 
         BlockValue argsBlock = new BlockValue();
@@ -240,7 +238,7 @@ public class Main {
         StandardLibrary.getInstance().open(entry);
 
         System.out.println("--- Execution ---");
-        ValueResult result = evaluator.evaluate(unit.getProgram(), entry);
+        ValueResult result = evaluator.execute(unit.getProgram(), entry);
 
         if (result.isLaunched()) {
             System.out.println(

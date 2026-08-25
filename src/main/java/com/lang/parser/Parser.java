@@ -30,6 +30,7 @@ public class Parser {
 
         while (!stream.isAtEnd() && !stream.check(EOF)) {
             try {
+
                 expressions.add(expr());
                 if (stream.check(SEMICOLON)) {
                     stream.advance();
@@ -48,7 +49,7 @@ public class Parser {
                 }
                 if (stream.check(SEMICOLON)) {
                     stream.advance();
-                }
+                } 
             }
         }
 
@@ -128,14 +129,11 @@ public class Parser {
                 Expr right = term();
                 Position pos = between(expr, right);
                 expr = new BinaryExpr(expr, new Operator(">=", pos), right, pos);
-            } else if (stream.match(LANGLE)) {
+            } else if (stream.checkAny(LANGLE, RANGLE)) {
+                Token op = stream.advance();
                 Expr right = term();
                 Position pos = between(expr, right);
-                expr = new BinaryExpr(expr, new Operator("<", pos), right, pos);
-            } else if (stream.match(RANGLE)) {
-                Expr right = term();
-                Position pos = between(expr, right);
-                expr = new BinaryExpr(expr, new Operator(">", pos), right, pos);
+                expr = new BinaryExpr(expr, new Operator(op.lexeme, pos), right, pos);
             } else {
                 break;
             }
@@ -166,23 +164,11 @@ public class Parser {
     }
 
     private Expr unary() {
-        if (stream.match(BANG)) {
-            Token op = stream.previous();
+        if (stream.checkAny(BANG, MINUS, PLUS)) {
+            Token op = stream.advance();
             Expr operand = unary();
             Position pos = between(op, operand);
-            return new UnaryExpr(new Operator("!", pos), operand, pos);
-        }
-        if (stream.match(MINUS)) {
-            Token op = stream.previous();
-            Expr operand = unary();
-            Position pos = between(op, operand);
-            return new UnaryExpr(new Operator("-", pos), operand, pos);
-        }
-        if (stream.match(PLUS)) {
-            Token op = stream.previous();
-            Expr operand = unary();
-            Position pos = between(op, operand);
-            return new UnaryExpr(new Operator("+", pos), operand, pos);
+            return new UnaryExpr(new Operator(op.lexeme, pos), operand, pos);
         }
 
         return postfix();
@@ -211,49 +197,49 @@ public class Parser {
                 }
                 stream.advance();
 
-                List<Expr> attachments = new ArrayList<>();
+                List<Expr> bindings = new ArrayList<>();
 
-                if (stream.check(COLON) && !stream.checkSequence(COLON, COLON)) {
+                if (stream.check(COLON) && !stream.checkNext(COLON)) {
                     hasColon = true;
                     stream.advance();
                     do {
-                        attachments.add(expr());
+                        bindings.add(expr());
                     } while (stream.matchSequence(COLON, COLON));
                 }
 
                 Positioned endPos = expr;
                 if (!arguments.isEmpty()) {
                     endPos = arguments.get(arguments.size() - 1);
-                } else if (!attachments.isEmpty()) {
-                    endPos = attachments.get(attachments.size() - 1);
+                } else if (!bindings.isEmpty()) {
+                    endPos = bindings.get(bindings.size() - 1);
                 }
 
                 expr = new CallExpr(
                         expr,
                         arguments,
-                        attachments,
+                        bindings,
                         hasParens,
                         hasColon,
                         between(expr, endPos));
                 continue;
             }
 
-            if (stream.check(COLON) && !stream.checkSequence(COLON, COLON)) {
+            if (stream.check(COLON) && !stream.checkNext(COLON)) {
                 hasColon = true;
                 stream.advance();
-                List<Expr> attachments = new ArrayList<>();
+                List<Expr> bindings = new ArrayList<>();
 
                 do {
-                    attachments.add(expr());
+                    bindings.add(expr());
                 } while (stream.matchSequence(COLON, COLON));
 
-                Positioned endPos = attachments.get(attachments.size() - 1);
+                Positioned endPos = bindings.get(bindings.size() - 1);
 
                 expr = new CallExpr(
                         expr,
                         List.of(),
-                        attachments,
-                        false,
+                        bindings,
+                        hasParens,
                         hasColon,
                         between(expr, endPos));
                 continue;
@@ -279,21 +265,19 @@ public class Parser {
     }
 
     private Expr primary() {
-        Token t = stream.peek();
-
-        if (t.is(NULL, BOOL, INT, FLOAT, STRING)) {
+        if (stream.checkAny(NULL, BOOL, INT, FLOAT, STRING)) {
             return literal();
         }
 
-        if (t.is(IDENTIFIER)) {
+        if (stream.check(IDENTIFIER)) {
             return ref();
         }
 
-        if (t.is(LPAREN, COLON, LBRACE)) {
+        if (stream.checkAny(LPAREN, COLON, LBRACE)) {
             return block();
         }
 
-        throw new CompilationException(UNEXPECTED_TOKEN.format(t.lexeme), t);
+        throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek()), stream.peek());
     }
 
     private LiteralExpr literal() {

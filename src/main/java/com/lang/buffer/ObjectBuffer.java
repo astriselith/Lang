@@ -40,7 +40,8 @@ public abstract class ObjectBuffer {
             int displacement = startCopySource;
             this.head -= displacement;
             this.tail -= displacement;
-            if (eofIndex >= 0) eofIndex -= displacement;
+            if (eofIndex >= 0)
+                eofIndex -= displacement;
 
             for (int i = Math.max(0, elementsToKeep); i < buffer.length; i++) {
                 buffer[i] = null;

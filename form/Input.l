@@ -2,7 +2,7 @@
 Input = {};
 
 Input.read = fun(message): {
-    println(message);
+    print(message);
     line = readln();
     println();
     return(line);

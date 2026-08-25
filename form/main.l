@@ -1,20 +1,25 @@
-// Input = import("./Input.l");
 include("./CFlow.l");
 
 println("Preencha algumas informações");
 
-// name = Input.read("Nome: ");
-// age = Input.read("Age: ");
-
-read = fun(message): {
-    println(message);
-    line = readln();
-    println();
-    return(line);
+ret = (v) -> {
+	launch("ret", v);
 };
 
-name = read("Nome: ");
-age = read("Idade: ");
+cap = (v) -> {
+	finalize("ret", v);
+};
+
+read = (message) -> {
+    print(message);
+    line = readln();
+    ret(line);
+};
+
+name = cap(read("Nome: "));
+age = cap(read("Idade: "));
+
+println();
 
 try: {
 	assert(name != "", "O nome não foi preenchido");
@@ -35,7 +40,13 @@ println();
 
 
 
+
 println();
 println("Name: " + name);
 println("Age: " + age);
+
+
+
+
+
 

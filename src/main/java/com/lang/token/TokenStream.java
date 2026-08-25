@@ -126,7 +126,7 @@ public abstract class TokenStream extends ObjectBuffer {
         return true;
     }
 
-    public boolean checkSequenceIndex(int index, int... types) {
+    public boolean checkIndexSequence(int index, int... types) {
         if (types == null || types.length == 0)
             return true;
         for (int i = 0; i < types.length; i++) {
@@ -137,11 +137,11 @@ public abstract class TokenStream extends ObjectBuffer {
     }
 
     public boolean checkNextSequence(int... types) {
-        return checkSequenceIndex(1, types);
+        return checkIndexSequence(1, types);
     }
 
     public boolean checkBackSequence(int... types) {
-        return checkSequenceIndex(-1, types);
+        return checkIndexSequence(-1, types);
     }
 
     public boolean match(int type) {

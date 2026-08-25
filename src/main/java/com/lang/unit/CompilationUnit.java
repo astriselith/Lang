@@ -70,6 +70,10 @@ public class CompilationUnit {
         return warnings;
     }
 
+    public boolean isSuccessful() {
+        return !hasErrors();
+    }
+
     public String getFilePath() {
         return filePath;
     }
@@ -122,7 +126,4 @@ public class CompilationUnit {
         }
     }
 
-    public boolean isSuccessful() {
-        return !hasErrors();
-    }
 }

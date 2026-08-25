@@ -13,33 +13,9 @@ public class Operator extends Node {
 		this.lexeme = lexeme;
 	}
 
-	public boolean isArithmetic() {
-		return lexeme.equals("+") || lexeme.equals("-") ||
-				lexeme.equals("*") || lexeme.equals("/") ||
-				lexeme.equals("%");
-	}
-
-	public boolean isComparison() {
-		return lexeme.equals("==") || lexeme.equals("!=") ||
-				lexeme.equals("<") || lexeme.equals(">") ||
-				lexeme.equals("<=") || lexeme.equals(">=");
-	}
-
-	public boolean isLogical() {
-		return lexeme.equals("&&") || lexeme.equals("||");
-	}
-
-	public boolean isAssignment() {
-		return lexeme.equals("=");
-	}
-
-	public boolean isUnary() {
-		return lexeme.equals("!") || lexeme.equals("-") || lexeme.equals("+");
-	}
-
 	@Override
 	public String toString() {
-			return lexeme;
+		return lexeme;
 	}
 
 }

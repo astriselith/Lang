@@ -24,10 +24,6 @@ public abstract class Value {
         return new StringValue(value);
     }
 
-    public static BlockValue ofBlock(BlockExpr block) {
-        return Value.ofBlock(block, null);
-    }
-
     public static BlockValue ofBlock(BlockExpr block, BlockValue parent) {
         return new BlockValue(block, parent);
     }

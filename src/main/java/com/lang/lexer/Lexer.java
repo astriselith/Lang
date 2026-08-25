@@ -161,30 +161,20 @@ public class Lexer extends TokenStream {
                 continue;
             }
 
-            if (cp != '/') {
+            if (cp != '#') {
                 return;
             }
 
             int next = source.peekNext();
 
-            if (next == '/') {
-                update(2);
-
-                while (!source.isAtEnd() && source.peek() != '\n') {
-                    update();
-                }
-
-                continue;
-            }
-
-            if (next == '*') {
-                update(2);
+            if (next == '#' && source.peekNextNext() == '#') {
+                update(3);
 
                 boolean closed = false;
 
                 while (!source.isAtEnd()) {
-                    if (source.peek() == '*' && source.peekNext() == '/') {
-                        update(2);
+                    if (source.peek() == '#' && source.peekNext() == '#' && source.peekNextNext() == '#') {
+                        update(3);
                         closed = true;
                         break;
                     }
@@ -195,6 +185,16 @@ public class Lexer extends TokenStream {
                 if (!closed && unit != null) {
                     unit.addError(LexingErrorCode.TAG,
                             new CompilationException(UNTERMINATED_COMMENT.format(), position()));
+                }
+
+                continue;
+            }
+
+            if (next != '#') {
+                update(1);
+
+                while (!source.isAtEnd() && source.peek() != '\n') {
+                    update();
                 }
 
                 continue;
@@ -260,6 +260,12 @@ public class Lexer extends TokenStream {
     }
 
     private Token string() {
+        boolean isMultiLine = source.peekNext() == '"' && source.peekNextNext() == '"';
+
+        if (isMultiLine) {
+            return multiLineString();
+        }
+
         StringBuilder value = new StringBuilder();
         StringBuilder lexeme = new StringBuilder();
 
@@ -276,10 +282,11 @@ public class Lexer extends TokenStream {
             }
 
             if (cp == '\n') {
-                value.append('\n');
-                lexeme.append('\n');
-                update();
-                continue;
+                if (unit != null) {
+                    unit.addError(LexingErrorCode.TAG,
+                            new CompilationException(UNTERMINATED_STRING.format(), position()));
+                }
+                return undefined(lexeme.toString());
             }
 
             if (cp == '\\') {
@@ -323,6 +330,38 @@ public class Lexer extends TokenStream {
                 lexeme.appendCodePoint(next);
                 update();
                 continue;
+            }
+
+            value.appendCodePoint(cp);
+            lexeme.appendCodePoint(cp);
+            update();
+        }
+
+        if (unit != null) {
+            unit.addError(LexingErrorCode.TAG, new CompilationException(UNTERMINATED_STRING.format(), position()));
+        }
+        return undefined(lexeme.toString());
+    }
+
+    private Token multiLineString() {
+        StringBuilder value = new StringBuilder();
+        StringBuilder lexeme = new StringBuilder();
+
+        lexeme.append("\"\"\"");
+        update(3);
+
+        if (source.peek() == '\n') {
+            update();
+            lexeme.append('\n');
+        }
+
+        while (!source.isAtEnd()) {
+            int cp = source.peek();
+
+            if (cp == '"' && source.peekNext() == '"' && source.peekNextNext() == '"') {
+                lexeme.append("\"\"\"");
+                update(3);
+                return Token.of(STRING, lexeme.toString(), line, lineStart, start, current);
             }
 
             value.appendCodePoint(cp);

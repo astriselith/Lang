@@ -1,7 +1,7 @@
 package com.lang.value;
 
 import com.lang.ast.Expr;
-import com.lang.context.Context;
+import com.lang.runtime.Runtime;
 
 import java.util.List;
 
@@ -12,10 +12,9 @@ public class StringValue extends BlockValue {
         this.value = value;
 
         this.set("length", new BlockValue(null, this) {
-
             @Override
             public ValueResult call(
-                    Context ctx,
+                    Runtime rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (!arguments.isEmpty()) {
@@ -27,17 +26,16 @@ public class StringValue extends BlockValue {
         });
 
         this.set("charAt", new BlockValue(null, this) {
-
             @Override
             public ValueResult call(
-                    Context ctx,
+                    Runtime rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (arguments.size() != 1) {
                     throw new RuntimeException("charAt(index) expects 1 argument");
                 }
 
-                ValueResult indexResult = (ValueResult) arguments.get(0).accept(ctx.visitor());
+                ValueResult indexResult = rt.accept(arguments.get(0));
                 if (indexResult.isLaunched()) {
                     return indexResult;
                 }
@@ -59,22 +57,21 @@ public class StringValue extends BlockValue {
         });
 
         this.set("substring", new BlockValue(null, this) {
-
             @Override
             public ValueResult call(
-                    Context ctx,
+                    Runtime rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (arguments.size() != 2) {
                     throw new RuntimeException("substring(start, end) expects 2 arguments");
                 }
 
-                ValueResult startResult = (ValueResult) arguments.get(0).accept(ctx.visitor());
+                ValueResult startResult = rt.accept(arguments.get(0));
                 if (startResult.isLaunched()) {
                     return startResult;
                 }
 
-                ValueResult endResult = (ValueResult) arguments.get(1).accept(ctx.visitor());
+                ValueResult endResult = rt.accept(arguments.get(1));
                 if (endResult.isLaunched()) {
                     return endResult;
                 }
@@ -99,10 +96,9 @@ public class StringValue extends BlockValue {
         });
 
         this.set("toUpperCase", new BlockValue(null, this) {
-
             @Override
             public ValueResult call(
-                    Context ctx,
+                    Runtime rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (!arguments.isEmpty()) {
@@ -115,10 +111,9 @@ public class StringValue extends BlockValue {
         });
 
         this.set("toLowerCase", new BlockValue(null, this) {
-
             @Override
             public ValueResult call(
-                    Context ctx,
+                    Runtime rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (!arguments.isEmpty()) {

@@ -4,58 +4,70 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import com.lang.ast.*;
-import com.lang.context.Context;
+import com.lang.runtime.Runtime;
 import com.lang.value.BlockValue;
 import com.lang.value.Value;
 import com.lang.value.ValueResult;
 
-public class Evaluator implements Context, ExprVisitor {
-    private final Deque<BlockValue> stack;
+public class Evaluator implements Runtime {
+    private final Deque<BlockValue> scopes;
+    private final Deque<Value> values;
 
-    static {
-        initGlobal();
-    }
+    private final String workingDir;
 
-    public Evaluator() {
-        this.stack = new ArrayDeque<>();
-    }
+    public Evaluator(String workingDir) {
+        this.scopes = new ArrayDeque<>();
+        this.values = new ArrayDeque<>();
 
-    @Override
-    public ExprVisitor visitor() {
-        return this;
+        this.workingDir = workingDir;
     }
 
     @Override
-    public Deque<BlockValue> stack() {
-        return stack;
+    public String workingDir() {
+        return workingDir;
     }
 
-    public BlockValue peek() {
-        return stack.peek();
+    @Override
+    public ValueResult accept(Expr expr) {
+        return (ValueResult) expr.accept(this);
     }
 
-    public BlockValue push(BlockValue scope) {
-        stack.push(scope);
-        return scope;
+    @Override
+    public BlockValue peekScope() {
+        return scopes.peek();
     }
 
-    public BlockValue pop() {
-        return stack.pop();
+    @Override
+    public void pushScope(BlockValue scope) {
+        scopes.push(scope);
     }
 
-    private static void initGlobal() {
-
+    @Override
+    public BlockValue popScope() {
+        return scopes.pop();
     }
 
-    public ValueResult evaluate(Program program) {
-        return evaluate(program, null);
+    @Override
+    public void pushValue(Value value) {
+        values.push(value);
     }
 
-    public ValueResult evaluate(Program program, BlockValue entryBlock) {
-        if (entryBlock != null) {
-            push(entryBlock);
+    @Override
+    public Value popValue() {
+        return values.pop();
+    }
+
+    @Override
+    public Value peekValue() {
+        return values.peek();
+    }
+
+    @Override
+    public ValueResult execute(Program program, BlockValue initScope) {
+        if (initScope != null) {
+            pushScope(initScope);
         } else {
-            push(new BlockValue());
+            pushScope(new BlockValue());
         }
 
         ValueResult result = ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
@@ -69,8 +81,8 @@ public class Evaluator implements Context, ExprVisitor {
             }
         }
 
-        if (entryBlock != null) {
-            pop();
+        if (initScope != null) {
+            popScope();
         }
         return result;
     }
@@ -107,7 +119,7 @@ public class Evaluator implements Context, ExprVisitor {
     @Override
     public Object visitRefExpr(RefExpr expr) {
         String name = expr.name.source;
-        BlockValue scope = peek();
+        BlockValue scope = peekScope();
 
         if (scope.has(name)) {
             return ValueResult.of(ValueResult.NORMAL, null, scope.get(name));
@@ -128,7 +140,7 @@ public class Evaluator implements Context, ExprVisitor {
 
         if (expr.target instanceof RefExpr) {
             String name = ((RefExpr) expr.target).name.source;
-            peek().set(name, value);
+            peekScope().set(name, value);
             return ValueResult.of(ValueResult.NORMAL, null, value);
         }
 
@@ -383,9 +395,10 @@ public class Evaluator implements Context, ExprVisitor {
 
     @Override
     public Object visitBlockExpr(BlockExpr expr) {
-        final BlockValue closureScope = peek();
+        final BlockValue closureScope = peekScope();
         BlockValue blockValue = new BlockValue(expr, closureScope);
 
         return ValueResult.of(ValueResult.NORMAL, null, blockValue);
     }
+
 }

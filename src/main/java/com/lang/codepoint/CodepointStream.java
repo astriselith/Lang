@@ -123,7 +123,7 @@ public abstract class CodepointStream extends ObjectBuffer {
         return true;
     }
 
-    public boolean checkSequenceIndex(int index, int... values) {
+    public boolean checkIndexSequence(int index, int... values) {
         if (values == null || values.length == 0) return true;
         for (int i = 0; i < values.length; i++) {
             if (!checkIndex(index + i, values[i])) return false;
@@ -132,11 +132,11 @@ public abstract class CodepointStream extends ObjectBuffer {
     }
 
     public boolean checkNextSequence(int... values) {
-        return checkSequenceIndex(1, values);
+        return checkIndexSequence(1, values);
     }
 
     public boolean checkBackSequence(int... values) {
-        return checkSequenceIndex(-1, values);
+        return checkIndexSequence(-1, values);
     }
 
     public boolean match(int value) {

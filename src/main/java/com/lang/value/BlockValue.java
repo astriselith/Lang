@@ -2,8 +2,7 @@ package com.lang.value;
 
 import com.lang.ast.BlockExpr;
 import com.lang.ast.Expr;
-import com.lang.ast.RefExpr;
-import com.lang.context.Context;
+import com.lang.runtime.Runtime;
 
 import java.util.*;
 
@@ -35,7 +34,7 @@ public class BlockValue extends Value {
                 sb.append(block.parameters.get(i).name.source);
             }
         }
-        sb.append(") -> { ... }");
+        sb.append(") -> {}");
         return sb.toString();
     }
 
@@ -109,20 +108,8 @@ public class BlockValue extends Value {
         return block;
     }
 
-    public List<RefExpr> getParameters() {
-        return block != null ? block.parameters : new ArrayList<>();
-    }
-
-    public List<RefExpr> getAttachments() {
-        return block != null ? block.attachments : new ArrayList<>();
-    }
-
-    public List<Expr> getExpressions() {
-        return block != null ? block.expressions : new ArrayList<>();
-    }
-
     public ValueResult call(
-            Context ctx,
+            Runtime rt,
             List<Expr> arguments,
             List<Expr> bindings) {
 
@@ -148,7 +135,7 @@ public class BlockValue extends Value {
 
         for (int i = 0; i < paramCount; i++) {
             String name = block.parameters.get(i).name.source;
-            ValueResult argResult = (ValueResult) arguments.get(i).accept(ctx.visitor());
+            ValueResult argResult = rt.accept(arguments.get(i));
             if (argResult.isLaunched()) {
                 return argResult;
             }
@@ -158,20 +145,20 @@ public class BlockValue extends Value {
 
         for (int i = 0; i < bindings.size(); i++) {
             String name = block.attachments.get(i).name.source;
-            ValueResult bindResult = (ValueResult) bindings.get(i).accept(ctx.visitor());
+            ValueResult bindResult = rt.accept(bindings.get(i));
             if (bindResult.isLaunched()) {
                 return bindResult;
             }
             newBlock.set(name, bindResult.getValue());
         }
 
-        ctx.stack().push(newBlock);
+        rt.pushScope(newBlock);
 
         for (Expr expression : block.expressions) {
-            ValueResult result = (ValueResult) expression.accept(ctx.visitor());
+            ValueResult result = rt.accept(expression);
 
             if (result.isLaunched()) {
-                ctx.stack().pop();
+                rt.popScope();
 
                 if (collectors.contains(result.getId()))
                     return ValueResult.of(ValueResult.NORMAL, null, result.getValue());
@@ -180,7 +167,7 @@ public class BlockValue extends Value {
                 }
             }
         }
-        ctx.stack().pop();
+        rt.popScope();
 
         return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
 

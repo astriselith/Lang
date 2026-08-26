@@ -3,22 +3,22 @@ package com.lang.ast;
 import com.lang.util.Position;
 
 public class LiteralExpr extends Expr {
-    public static final int NULL = 0;
-    public static final int BOOL = 1;
-    public static final int INT = 2;
-    public static final int FLOAT = 3;
-    public static final int STRING = 4;
+    public static final int NULL = 0,
+            BOOL = 1,
+            INT = 2,
+            FLOAT = 3,
+            STRING = 4, MULTILINE_STRING = 5;
 
     public int type;
-    public String value;
+    public String lexeme;
 
     public LiteralExpr() {
     }
 
-    public LiteralExpr(int type, String value, Position position) {
+    public LiteralExpr(int type, String lexeme, Position position) {
         super(position);
         this.type = type;
-        this.value = value;
+        this.lexeme = lexeme;
     }
 
     @Override

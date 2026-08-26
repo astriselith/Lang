@@ -6,8 +6,10 @@ public enum LexingErrorCode {
 	UNKNOWN_ESCAPE_SEQUENCE("Unknown escape sequence: %s"),
 	MALFORMED_COMMENT("Malformed comment"),
 	UNTERMINATED_COMMENT("Unterminated comment"),
+	UNTERMINATED_MULTILINE_COMMENT("Unterminated multiline comment"),
 	INVALID_CHARACTER_LITERAL("Invalid character literal"),
 	UNTERMINATED_STRING("Unterminated string"),
+	UNTERMINATED_MULTILINE_STRING("Unterminated multiline string"),
 	INVALID_TOKEN("Invalid token: %s");
 
 	public static final String TAG = "LEXER";

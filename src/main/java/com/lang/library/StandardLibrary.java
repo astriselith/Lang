@@ -493,6 +493,7 @@ public final class StandardLibrary implements Library {
             Parser parser = new Parser(lexer, unit);
 
             parser.parse();
+            // unit.printReport();
 
             if (unit.hasErrors()) {
                 throw new RuntimeException(

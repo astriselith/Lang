@@ -5,8 +5,8 @@ import com.lang.util.Positioned;
 
 public class Token implements Positioned {
     public static final int
-            // Especiais
-            UNDEFINED = 0,
+    // Especiais
+    UNDEFINED = 0,
             EOF = 1,
 
             // Literais
@@ -15,6 +15,7 @@ public class Token implements Positioned {
             INT = 12,
             FLOAT = 13,
             STRING = 14,
+            MULTILINE_STRING = 15,
 
             // Identificador
             IDENTIFIER = 20,
@@ -95,7 +96,8 @@ public class Token implements Positioned {
 
     public boolean is(int... types) {
         for (int t : types) {
-            if (this.type == t) return true;
+            if (this.type == t)
+                return true;
         }
         return false;
     }
@@ -129,6 +131,8 @@ public class Token implements Positioned {
                 return "FLOAT";
             case STRING:
                 return "STRING";
+            case MULTILINE_STRING:
+                return "MULTILINE_STRING";
             case IDENTIFIER:
                 return "IDENTIFIER";
             case PLUS:

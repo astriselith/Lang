@@ -145,9 +145,9 @@ public class Lexer extends TokenStream {
         }
 
         String text = Codepoint.toString(cp);
-        if (unit != null) {
-            unit.addError(LexingErrorCode.TAG, new CompilationException(UNEXPECTED_CHARACTER.format(text), position()));
-        }
+
+        unit.addError(LexingErrorCode.TAG, new CompilationException(UNEXPECTED_CHARACTER.format(text), position()));
+
         update();
         return undefined(text);
     }
@@ -179,28 +179,58 @@ public class Lexer extends TokenStream {
                         break;
                     }
 
+                    if (source.peek() == '#') {
+                        unit.addError(LexingErrorCode.TAG,
+                                new CompilationException(MALFORMED_COMMENT.format(), position()));
+                        update(1);
+                        return;
+                    }
+
                     update();
                 }
 
-                if (!closed && unit != null) {
+                if (!closed) {
+                    unit.addError(LexingErrorCode.TAG,
+                            new CompilationException(UNTERMINATED_MULTILINE_COMMENT.format(), position()));
+                }
+
+                continue;
+            }
+
+            update(1);
+
+            boolean closed = false;
+
+            while (!source.isAtEnd()) {
+                if (source.peek() == '#') {
+                    int nextNext = source.peekNext();
+
+                    if (nextNext == '#' && source.peekNextNext() == '#') {
+                        unit.addError(LexingErrorCode.TAG,
+                                new CompilationException(MALFORMED_COMMENT.format(), position()));
+                        update(3);
+                        return;
+                    }
+
+                    update(1);
+                    closed = true;
+                    break;
+                }
+
+                if (source.peek() == '\n') {
                     unit.addError(LexingErrorCode.TAG,
                             new CompilationException(UNTERMINATED_COMMENT.format(), position()));
+                    update(1);
+                    return;
                 }
 
-                continue;
+                update();
             }
 
-            if (next != '#') {
-                update(1);
-
-                while (!source.isAtEnd() && source.peek() != '\n') {
-                    update();
-                }
-
-                continue;
+            if (!closed) {
+                unit.addError(LexingErrorCode.TAG,
+                        new CompilationException(UNTERMINATED_COMMENT.format(), position()));
             }
-
-            return;
         }
     }
 
@@ -253,40 +283,50 @@ public class Lexer extends TokenStream {
             return Token.of(FLOAT, text, line, lineStart, start, current);
         }
 
-        if (unit != null) {
-            unit.addError(LexingErrorCode.TAG, new CompilationException(INVALID_NUMBER.format(text), position()));
-        }
+        unit.addError(LexingErrorCode.TAG, new CompilationException(INVALID_NUMBER.format(text), position()));
+
         return undefined(text);
     }
 
     private Token string() {
-        boolean isMultiLine = source.peekNext() == '"' && source.peekNextNext() == '"';
-
-        if (isMultiLine) {
-            return multiLineString();
-        }
-
-        StringBuilder value = new StringBuilder();
         StringBuilder lexeme = new StringBuilder();
+        boolean isMultiLine = false;
 
-        lexeme.append('"');
-        update();
+        if (source.peek() == '"' && source.peekNext() == '"' && source.peekNextNext() == '"') {
+            isMultiLine = true;
+            lexeme.append("\"\"\"");
+            update(3);
+
+            if (source.peek() == '\n') {
+                lexeme.append('\n');
+                update();
+            }
+        } else {
+            lexeme.append('"');
+            update();
+        }
 
         while (!source.isAtEnd()) {
             int cp = source.peek();
 
-            if (cp == '"') {
-                lexeme.append('"');
-                update();
-                return Token.of(STRING, lexeme.toString(), line, lineStart, start, current);
-            }
+            if (isMultiLine) {
+                if (cp == '"' && source.peekNext() == '"' && source.peekNextNext() == '"') {
+                    lexeme.append("\"\"\"");
+                    update(3);
+                    return Token.of(MULTILINE_STRING, lexeme.toString(), line, lineStart, start, current);
+                }
+            } else {
+                if (cp == '"') {
+                    lexeme.append('"');
+                    update();
+                    return Token.of(STRING, lexeme.toString(), line, lineStart, start, current);
+                }
 
-            if (cp == '\n') {
-                if (unit != null) {
+                if (cp == '\n') {
                     unit.addError(LexingErrorCode.TAG,
                             new CompilationException(UNTERMINATED_STRING.format(), position()));
+                    return undefined(lexeme.toString());
                 }
-                return undefined(lexeme.toString());
             }
 
             if (cp == '\\') {
@@ -301,76 +341,34 @@ public class Lexer extends TokenStream {
 
                 switch (next) {
                     case 'n':
-                        value.append('\n');
-                        break;
                     case 'r':
-                        value.append('\r');
-                        break;
                     case 't':
-                        value.append('\t');
-                        break;
                     case '\\':
-                        value.append('\\');
-                        break;
                     case '"':
-                        value.append('"');
+                        lexeme.appendCodePoint(next);
+                        update();
                         break;
                     default:
                         lexeme.appendCodePoint(next);
                         update();
-
-                        if (unit != null) {
-                            unit.addError(LexingErrorCode.TAG, new CompilationException(
-                                    UNKNOWN_ESCAPE_SEQUENCE.format(Codepoint.toString(next)), position()));
-                        }
-
+                        unit.addError(LexingErrorCode.TAG, new CompilationException(
+                                UNKNOWN_ESCAPE_SEQUENCE.format(Codepoint.toString(next)), position()));
                         return undefined(lexeme.toString());
                 }
 
-                lexeme.appendCodePoint(next);
-                update();
                 continue;
             }
 
-            value.appendCodePoint(cp);
             lexeme.appendCodePoint(cp);
             update();
         }
 
-        if (unit != null) {
-            unit.addError(LexingErrorCode.TAG, new CompilationException(UNTERMINATED_STRING.format(), position()));
-        }
-        return undefined(lexeme.toString());
-    }
-
-    private Token multiLineString() {
-        StringBuilder value = new StringBuilder();
-        StringBuilder lexeme = new StringBuilder();
-
-        lexeme.append("\"\"\"");
-        update(3);
-
-        if (source.peek() == '\n') {
-            update();
-            lexeme.append('\n');
-        }
-
-        while (!source.isAtEnd()) {
-            int cp = source.peek();
-
-            if (cp == '"' && source.peekNext() == '"' && source.peekNextNext() == '"') {
-                lexeme.append("\"\"\"");
-                update(3);
-                return Token.of(STRING, lexeme.toString(), line, lineStart, start, current);
-            }
-
-            value.appendCodePoint(cp);
-            lexeme.appendCodePoint(cp);
-            update();
-        }
-
-        if (unit != null) {
-            unit.addError(LexingErrorCode.TAG, new CompilationException(UNTERMINATED_STRING.format(), position()));
+        if (isMultiLine) {
+            unit.addError(LexingErrorCode.TAG,
+                    new CompilationException(UNTERMINATED_MULTILINE_STRING.format(), position()));
+        } else {
+            unit.addError(LexingErrorCode.TAG,
+                    new CompilationException(UNTERMINATED_STRING.format(), position()));
         }
         return undefined(lexeme.toString());
     }

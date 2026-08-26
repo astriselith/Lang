@@ -26,9 +26,9 @@ public class Printer implements ExprVisitor {
 
     @Override
     public Object visitLiteralExpr(LiteralExpr expr) {
-        if (expr.value == null)
+        if (expr.lexeme == null)
             return "null";
-        return expr.value;
+        return expr.lexeme;
     }
 
     @Override

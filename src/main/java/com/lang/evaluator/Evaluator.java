@@ -5,6 +5,7 @@ import java.util.Deque;
 
 import com.lang.ast.*;
 import com.lang.runtime.Runtime;
+import com.lang.util.StringUtils;
 import com.lang.value.BlockValue;
 import com.lang.value.Value;
 import com.lang.value.ValueResult;
@@ -95,20 +96,23 @@ public class Evaluator implements Runtime {
                 result = Value.ofNull();
                 break;
             case LiteralExpr.BOOL:
-                result = Value.ofBool(Boolean.parseBoolean(expr.value));
+                result = Value.ofBool(Boolean.parseBoolean(expr.lexeme));
                 break;
             case LiteralExpr.INT:
-                result = Value.ofInt(Long.parseLong(expr.value));
+                result = Value.ofInt(Long.parseLong(expr.lexeme));
                 break;
             case LiteralExpr.FLOAT:
-                result = Value.ofFloat(Double.parseDouble(expr.value));
+                result = Value.ofFloat(Double.parseDouble(expr.lexeme));
                 break;
             case LiteralExpr.STRING:
-                String str = expr.value;
-                if (str.startsWith("\"") && str.endsWith("\"")) {
-                    str = str.substring(1, str.length() - 1);
-                }
+                String str = StringUtils.stripQuotes(expr.lexeme);
+                str = StringUtils.unescape(str);
                 result = Value.ofString(str);
+                break;
+            case LiteralExpr.MULTILINE_STRING:
+                String multilineStr = StringUtils.stripTripleQuotes(expr.lexeme);
+                multilineStr = StringUtils.unescape(multilineStr);
+                result = Value.ofString(multilineStr);
                 break;
             default:
                 result = Value.ofNull();

@@ -1,6 +1,10 @@
-include("./CFlow.l");
+include("./control-flow");
 
-println("Preencha algumas informações");
+println("""
+Preencha algumas informações:
+
+requeridos: nome e idade.
+""");
 
 read = (message) -> {
     print(message);

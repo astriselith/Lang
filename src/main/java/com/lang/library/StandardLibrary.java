@@ -26,7 +26,7 @@ public final class StandardLibrary implements Library {
 
     private static final Scanner SCANNER = new Scanner(System.in);
 
-    public static final BlockValue INCLUDE = new BlockValue() {
+    public static final BlockValue INCLUDE_VAL = new BlockValue() {
         @Override
         public ValueResult call(
                 Runtime rt,
@@ -104,7 +104,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    public static final BlockValue IMPORT = new BlockValue() {
+    public static final BlockValue IMPORT_VAL = new BlockValue() {
         @Override
         public ValueResult call(
                 Runtime rt,
@@ -184,7 +184,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    public static final BlockValue EXPORT = new BlockValue() {
+    public static final BlockValue EXPORT_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1) {
@@ -202,7 +202,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue IF = new BlockValue() {
+    private static final BlockValue IF_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1) {
@@ -249,7 +249,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue WHILE = new BlockValue() {
+    private static final BlockValue WHILE_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1) {
@@ -315,7 +315,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue BREAK = new BlockValue() {
+    private static final BlockValue BREAK_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() > 1) {
@@ -332,7 +332,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue CONTINUE = new BlockValue() {
+    private static final BlockValue CONTINUE_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (!arguments.isEmpty()) {
@@ -342,7 +342,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue PRINTLN = new BlockValue() {
+    private static final BlockValue PRINTLN_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.isEmpty()) {
@@ -360,7 +360,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue PRINT = new BlockValue() {
+    private static final BlockValue PRINT_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.isEmpty()) {
@@ -377,7 +377,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue READLN = new BlockValue() {
+    private static final BlockValue READLN_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (!arguments.isEmpty()) {
@@ -388,7 +388,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue LAUNCH = new BlockValue() {
+    private static final BlockValue LAUNCH_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 2) {
@@ -414,7 +414,7 @@ public final class StandardLibrary implements Library {
         }
     };
 
-    private static final BlockValue FINALIZE = new BlockValue() {
+    private static final BlockValue FINALIZE_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 2) {
@@ -453,21 +453,21 @@ public final class StandardLibrary implements Library {
             throw new IllegalArgumentException("block cannot be null");
         }
 
-        block.setLocal("include", INCLUDE);
-        block.setLocal("import", IMPORT);
-        block.setLocal("export", EXPORT);
+        block.setLocal("include", INCLUDE_VAL);
+        block.setLocal("import", IMPORT_VAL);
+        block.setLocal("export", EXPORT_VAL);
 
-        block.setLocal("if", IF);
-        block.setLocal("while", WHILE);
-        block.setLocal("break", BREAK);
-        block.setLocal("continue", CONTINUE);
+        block.setLocal("if", IF_VAL);
+        block.setLocal("while", WHILE_VAL);
+        block.setLocal("break", BREAK_VAL);
+        block.setLocal("continue", CONTINUE_VAL);
 
-        block.setLocal("println", PRINTLN);
-        block.setLocal("print", PRINT);
-        block.setLocal("readln", READLN);
+        block.setLocal("println", PRINTLN_VAL);
+        block.setLocal("print", PRINT_VAL);
+        block.setLocal("readln", READLN_VAL);
 
-        block.setLocal("launch", LAUNCH);
-        block.setLocal("finalize", FINALIZE);
+        block.setLocal("launch", LAUNCH_VAL);
+        block.setLocal("finalize", FINALIZE_VAL);
     }
 
     private static Program compileFile(Runtime rt, String name) {

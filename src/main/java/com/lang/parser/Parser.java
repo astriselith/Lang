@@ -265,7 +265,7 @@ public class Parser {
     }
 
     private Expr primary() {
-        if (stream.checkAny(NULL, BOOL, INT, FLOAT, STRING, MULTILINE_STRING)) {
+        if (stream.checkAny(NULL, BOOL, INT, FLOAT, STRING)) {
             return literal();
         }
 
@@ -299,9 +299,6 @@ public class Parser {
                 break;
             case STRING:
                 literalType = LiteralExpr.STRING;
-                break;
-            case MULTILINE_STRING:
-                literalType = LiteralExpr.MULTILINE_STRING;
                 break;
             default:
                 throw new IllegalStateException("Unexpected literal type: " + t.type);

@@ -7,7 +7,7 @@ public class LiteralExpr extends Expr {
             BOOL = 1,
             INT = 2,
             FLOAT = 3,
-            STRING = 4, MULTILINE_STRING = 5;
+            STRING = 4;
 
     public int type;
     public String lexeme;

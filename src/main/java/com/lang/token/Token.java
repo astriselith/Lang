@@ -15,7 +15,6 @@ public class Token implements Positioned {
             INT = 12,
             FLOAT = 13,
             STRING = 14,
-            MULTILINE_STRING = 15,
 
             // Identificador
             IDENTIFIER = 20,
@@ -131,8 +130,6 @@ public class Token implements Positioned {
                 return "FLOAT";
             case STRING:
                 return "STRING";
-            case MULTILINE_STRING:
-                return "MULTILINE_STRING";
             case IDENTIFIER:
                 return "IDENTIFIER";
             case PLUS:

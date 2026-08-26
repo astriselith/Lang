@@ -109,11 +109,6 @@ public class Evaluator implements Runtime {
                 str = StringUtils.unescape(str);
                 result = Value.ofString(str);
                 break;
-            case LiteralExpr.MULTILINE_STRING:
-                String multilineStr = StringUtils.stripTripleQuotes(expr.lexeme);
-                multilineStr = StringUtils.unescape(multilineStr);
-                result = Value.ofString(multilineStr);
-                break;
             default:
                 result = Value.ofNull();
         }

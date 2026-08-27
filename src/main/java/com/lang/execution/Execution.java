@@ -1,4 +1,4 @@
-package com.lang.runtime;
+package com.lang.execution;
 
 import com.lang.ast.Expr;
 import com.lang.ast.ExprVisitor;
@@ -7,7 +7,7 @@ import com.lang.value.BlockValue;
 import com.lang.value.Value;
 import com.lang.value.ValueResult;
 
-public interface Runtime extends ExprVisitor {
+public interface Execution extends ExprVisitor {
 
     String workingDir();
 

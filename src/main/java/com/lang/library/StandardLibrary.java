@@ -3,8 +3,8 @@ package com.lang.library;
 import com.lang.value.BlockValue;
 import com.lang.ast.Expr;
 import com.lang.ast.Program;
+import com.lang.execution.Execution;
 import com.lang.lexer.Lexer;
-import com.lang.runtime.Runtime;
 import com.lang.source.SourceStream;
 import com.lang.unit.CompilationUnit;
 import com.lang.parser.Parser;
@@ -28,7 +28,7 @@ public final class StandardLibrary implements Library {
 
     public static final BlockValue INCLUDE_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
 
             if (arguments.size() != 1) {
                 throw new RuntimeException("include(name) expects 1 argument");
@@ -93,7 +93,7 @@ public final class StandardLibrary implements Library {
 
     public static final BlockValue IMPORT_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
 
             if (arguments.size() != 1) {
                 throw new RuntimeException("import(name) expects 1 argument");
@@ -158,7 +158,7 @@ public final class StandardLibrary implements Library {
 
     public static final BlockValue EXPORT_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1) {
                 throw new RuntimeException("export(obj) expects 1 argument");
             }
@@ -176,7 +176,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue IF_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1) {
                 throw new RuntimeException("if(condition) expects 1 argument");
             }
@@ -223,7 +223,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue WHILE_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1) {
                 throw new RuntimeException("while(condition) expects 1 argument");
             }
@@ -289,7 +289,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue BREAK_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() > 1) {
                 throw new RuntimeException("break() expects 0 or 1 arguments");
             }
@@ -306,7 +306,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue CONTINUE_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (!arguments.isEmpty()) {
                 throw new RuntimeException("continue() expects 0 arguments");
             }
@@ -316,7 +316,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue PRINTLN_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.isEmpty()) {
                 System.out.println();
                 return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
@@ -334,7 +334,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue PRINT_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.isEmpty()) {
                 throw new RuntimeException("print() expects 1 argument");
             }
@@ -351,7 +351,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue READLN_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (!arguments.isEmpty()) {
                 throw new RuntimeException("readln() expects 0 arguments");
             }
@@ -362,7 +362,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue LAUNCH_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1 && arguments.size() != 2) {
                 throw new RuntimeException("launch(id) or launch(id, value) expects 1 or 2 arguments");
             }
@@ -394,7 +394,7 @@ public final class StandardLibrary implements Library {
 
     private static final BlockValue FINALIZE_VAL = new BlockValue() {
         @Override
-        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
+        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
             if (arguments.size() != 1 && arguments.size() != 2) {
                 throw new RuntimeException("finalize(body) or finalize(id, body) expects 1 or 2 arguments");
             }
@@ -455,7 +455,7 @@ public final class StandardLibrary implements Library {
         block.setLocal("finalize", FINALIZE_VAL);
     }
 
-    private static Program compileFile(Runtime rt, String name) {
+    private static Program compileFile(Execution rt, String name) {
         File file = new File(rt.workingDir(), name);
 
         if (!file.isFile() && !name.endsWith(".l")) {

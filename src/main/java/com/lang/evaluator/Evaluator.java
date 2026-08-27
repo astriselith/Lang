@@ -4,13 +4,13 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import com.lang.ast.*;
-import com.lang.runtime.Runtime;
+import com.lang.execution.Execution;
 import com.lang.util.StringUtils;
 import com.lang.value.BlockValue;
 import com.lang.value.Value;
 import com.lang.value.ValueResult;
 
-public class Evaluator implements Runtime {
+public class Evaluator implements Execution {
     private final Deque<BlockValue> scopes;
     private final Deque<Value> values;
 

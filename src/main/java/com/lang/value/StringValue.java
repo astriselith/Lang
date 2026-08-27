@@ -1,7 +1,7 @@
 package com.lang.value;
 
 import com.lang.ast.Expr;
-import com.lang.runtime.Runtime;
+import com.lang.execution.Execution;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public class StringValue extends BlockValue {
         this.set("length", new BlockValue(null, this) {
             @Override
             public ValueResult call(
-                    Runtime rt,
+                    Execution rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (!arguments.isEmpty()) {
@@ -28,7 +28,7 @@ public class StringValue extends BlockValue {
         this.set("charAt", new BlockValue(null, this) {
             @Override
             public ValueResult call(
-                    Runtime rt,
+                    Execution rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (arguments.size() != 1) {
@@ -59,7 +59,7 @@ public class StringValue extends BlockValue {
         this.set("substring", new BlockValue(null, this) {
             @Override
             public ValueResult call(
-                    Runtime rt,
+                    Execution rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (arguments.size() != 2) {
@@ -98,7 +98,7 @@ public class StringValue extends BlockValue {
         this.set("toUpperCase", new BlockValue(null, this) {
             @Override
             public ValueResult call(
-                    Runtime rt,
+                    Execution rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (!arguments.isEmpty()) {
@@ -113,7 +113,7 @@ public class StringValue extends BlockValue {
         this.set("toLowerCase", new BlockValue(null, this) {
             @Override
             public ValueResult call(
-                    Runtime rt,
+                    Execution rt,
                     List<Expr> arguments,
                     List<Expr> bindings) {
                 if (!arguments.isEmpty()) {

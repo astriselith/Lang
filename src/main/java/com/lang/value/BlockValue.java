@@ -2,7 +2,7 @@ package com.lang.value;
 
 import com.lang.ast.BlockExpr;
 import com.lang.ast.Expr;
-import com.lang.runtime.Runtime;
+import com.lang.execution.Execution;
 
 import java.util.*;
 
@@ -109,7 +109,7 @@ public class BlockValue extends Value {
     }
 
     public ValueResult call(
-            Runtime rt,
+            Execution rt,
             List<Expr> arguments,
             List<Expr> bindings) {
 

@@ -1,19 +1,22 @@
 include("./control-flow");
 
-println("""
+println("
 Preencha algumas informações:
 
 requeridos: nome e idade.
-""");
+");
 
 read = (message) -> {
+	finalize("return");
+
     print(message);
     line = readln();
-    launch("ret", line);
+	
+    launch("return", line);
 };
 
-name = finalize("ret", read("Nome: "));
-age = finalize("ret", read("Idade: "));
+name = read("Nome: ");
+age = read("Idade: ");
 
 println();
 

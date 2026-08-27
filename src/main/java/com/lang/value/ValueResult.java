@@ -37,4 +37,10 @@ public class ValueResult {
     public Value getValue() {
         return value;
     }
+
+    public boolean idEquals(String otherId) {
+        if (isNormal())
+            return false;
+        return id.equals(otherId);
+    }
 }

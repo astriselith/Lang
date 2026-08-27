@@ -88,7 +88,7 @@ public class BlockValue extends Value {
         return locals;
     }
 
-    public void setCollector(String id) {
+    public void addCollector(String id) {
         collectors.add(id);
     }
 
@@ -160,9 +160,9 @@ public class BlockValue extends Value {
             if (result.isLaunched()) {
                 rt.popScope();
 
-                if (collectors.contains(result.getId()))
+                if (newBlock.hasCollector(result.getId())) {
                     return ValueResult.of(ValueResult.NORMAL, null, result.getValue());
-                else {
+                } else {
                     return result;
                 }
             }
@@ -170,7 +170,6 @@ public class BlockValue extends Value {
         rt.popScope();
 
         return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
-
     }
 
 }

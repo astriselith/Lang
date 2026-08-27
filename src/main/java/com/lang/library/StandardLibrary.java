@@ -28,14 +28,10 @@ public final class StandardLibrary implements Library {
 
     public static final BlockValue INCLUDE_VAL = new BlockValue() {
         @Override
-        public ValueResult call(
-                Runtime rt,
-                List<Expr> arguments,
-                List<Expr> bindings) {
+        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
 
             if (arguments.size() != 1) {
-                throw new RuntimeException(
-                        "include(name) expects 1 argument");
+                throw new RuntimeException("include(name) expects 1 argument");
             }
 
             ValueResult nameResult = rt.accept(arguments.get(0));
@@ -53,8 +49,7 @@ public final class StandardLibrary implements Library {
             }
 
             if (!file.isFile()) {
-                throw new RuntimeException(
-                        "Module not found: " + name);
+                throw new RuntimeException("Module not found: " + name);
             }
 
             String path;
@@ -62,8 +57,7 @@ public final class StandardLibrary implements Library {
             try {
                 path = file.getCanonicalPath();
             } catch (IOException e) {
-                throw new RuntimeException(
-                        "Failed to resolve module: " + name, e);
+                throw new RuntimeException("Failed to resolve module: " + name, e);
             }
 
             BlockValue exports = cache.get(path);
@@ -75,18 +69,15 @@ public final class StandardLibrary implements Library {
 
                 ValueResult result = rt.execute(program, moduleScope);
 
-                if (!result.isLaunched()
-                        || !"module-export".equals(result.getId())) {
+                if (!result.isLaunched() || !"module-export".equals(result.getId())) {
 
-                    throw new RuntimeException(
-                            "Module did not export: " + name);
+                    throw new RuntimeException("Module did not export: " + name);
                 }
 
                 Value value = result.getValue();
 
                 if (value == null || !value.isBlock()) {
-                    throw new RuntimeException(
-                            "Module export must be a block: " + name);
+                    throw new RuntimeException("Module export must be a block: " + name);
                 }
 
                 exports = value.asBlock();
@@ -94,26 +85,18 @@ public final class StandardLibrary implements Library {
                 cache.put(path, exports);
             }
 
-            exports.getLocals().forEach(
-                    rt.peekScope()::setLocal);
+            exports.getLocals().forEach(rt.peekScope()::setLocal);
 
-            return ValueResult.of(
-                    ValueResult.NORMAL,
-                    null,
-                    Value.ofNull());
+            return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
         }
     };
 
     public static final BlockValue IMPORT_VAL = new BlockValue() {
         @Override
-        public ValueResult call(
-                Runtime rt,
-                List<Expr> arguments,
-                List<Expr> bindings) {
+        public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
 
             if (arguments.size() != 1) {
-                throw new RuntimeException(
-                        "import(name) expects 1 argument");
+                throw new RuntimeException("import(name) expects 1 argument");
             }
 
             ValueResult nameResult = rt.accept(arguments.get(0));
@@ -131,8 +114,7 @@ public final class StandardLibrary implements Library {
             }
 
             if (!file.isFile()) {
-                throw new RuntimeException(
-                        "Module not found: " + name);
+                throw new RuntimeException("Module not found: " + name);
             }
 
             String path;
@@ -140,17 +122,13 @@ public final class StandardLibrary implements Library {
             try {
                 path = file.getCanonicalPath();
             } catch (IOException e) {
-                throw new RuntimeException(
-                        "Failed to resolve module: " + name, e);
+                throw new RuntimeException("Failed to resolve module: " + name, e);
             }
 
             BlockValue cached = cache.get(path);
 
             if (cached != null) {
-                return ValueResult.of(
-                        ValueResult.NORMAL,
-                        null,
-                        cached);
+                return ValueResult.of(ValueResult.NORMAL, null, cached);
             }
 
             Program program = compileFile(rt, name);
@@ -159,28 +137,22 @@ public final class StandardLibrary implements Library {
 
             ValueResult result = rt.execute(program, moduleScope);
 
-            if (result.isLaunched()
-                    && "module-export".equals(result.getId())) {
+            if (result.isLaunched() && "module-export".equals(result.getId())) {
 
                 Value value = result.getValue();
 
                 if (value == null || !value.isBlock()) {
-                    throw new RuntimeException(
-                            "Module export must be a block: " + name);
+                    throw new RuntimeException("Module export must be a block: " + name);
                 }
 
                 BlockValue exports = value.asBlock();
 
                 cache.put(path, exports);
 
-                return ValueResult.of(
-                        ValueResult.NORMAL,
-                        null,
-                        exports);
+                return ValueResult.of(ValueResult.NORMAL, null, exports);
             }
 
-            throw new RuntimeException(
-                    "Module did not export: " + name);
+            throw new RuntimeException("Module did not export: " + name);
         }
     };
 
@@ -391,8 +363,8 @@ public final class StandardLibrary implements Library {
     private static final BlockValue LAUNCH_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
-            if (arguments.size() != 2) {
-                throw new RuntimeException("launch(id, value) expects 2 arguments");
+            if (arguments.size() != 1 && arguments.size() != 2) {
+                throw new RuntimeException("launch(id) or launch(id, value) expects 1 or 2 arguments");
             }
 
             ValueResult idResult = rt.accept(arguments.get(0));
@@ -405,20 +377,26 @@ public final class StandardLibrary implements Library {
                 throw new RuntimeException("launch() id must be string");
             }
 
-            ValueResult valueResult = rt.accept(arguments.get(1));
-            if (valueResult.isLaunched()) {
-                return valueResult;
+            Value value = Value.ofNull();
+            if (arguments.size() == 2) {
+                ValueResult valueResult = rt.accept(arguments.get(1));
+
+                if (valueResult.isLaunched()) {
+                    return valueResult;
+                }
+
+                value = valueResult.getValue();
             }
 
-            return ValueResult.of(ValueResult.LAUNCHED, id.toLString(), valueResult.getValue());
+            return ValueResult.of(ValueResult.LAUNCHED, id.toLString(), value);
         }
     };
 
     private static final BlockValue FINALIZE_VAL = new BlockValue() {
         @Override
         public ValueResult call(Runtime rt, List<Expr> arguments, List<Expr> bindings) {
-            if (arguments.size() != 2) {
-                throw new RuntimeException("finalize(id, body) expects 2 arguments");
+            if (arguments.size() != 1 && arguments.size() != 2) {
+                throw new RuntimeException("finalize(body) or finalize(id, body) expects 1 or 2 arguments");
             }
 
             ValueResult idResult = rt.accept(arguments.get(0));
@@ -431,12 +409,19 @@ public final class StandardLibrary implements Library {
                 throw new RuntimeException("finalize() id must be string");
             }
 
-            ValueResult bodyResult = rt.accept(arguments.get(1));
-            if (bodyResult.isLaunched() && bodyResult.getId().equals(id.toLString())) {
-                return ValueResult.of(ValueResult.NORMAL, null, bodyResult.getValue());
+            Value body = Value.ofNull();
+            if (arguments.size() == 2) {
+                ValueResult bodyResult = rt.accept(arguments.get(1));
+                if (!bodyResult.idEquals(id.toLString())) {
+                    return bodyResult;
+                }
+
+                body = bodyResult.getValue();
             }
 
-            return bodyResult;
+            rt.peekScope().addCollector(id.toLString());
+            return ValueResult.of(ValueResult.NORMAL, null, body);
+
         }
     };
 
@@ -478,16 +463,13 @@ public final class StandardLibrary implements Library {
         }
 
         if (!file.isFile()) {
-            throw new RuntimeException(
-                    "Module not found: " + name);
+            throw new RuntimeException("Module not found: " + name);
         }
 
         try (FileInputStream input = new FileInputStream(file)) {
             SourceStream source = new SourceStream(input);
 
-            CompilationUnit unit = new CompilationUnit(
-                    file.getAbsolutePath(),
-                    file.getName());
+            CompilationUnit unit = new CompilationUnit(file.getAbsolutePath(), file.getName());
 
             Lexer lexer = new Lexer(source, unit);
             Parser parser = new Parser(lexer, unit);
@@ -496,15 +478,13 @@ public final class StandardLibrary implements Library {
             // unit.printReport();
 
             if (unit.hasErrors()) {
-                throw new RuntimeException(
-                        "Compilation failed: " + name);
+                throw new RuntimeException("Compilation failed: " + name);
             }
 
             return unit.getProgram();
 
         } catch (IOException e) {
-            throw new RuntimeException(
-                    "Failed to compile module: " + name, e);
+            throw new RuntimeException("Failed to compile module: " + name, e);
         }
     }
 }

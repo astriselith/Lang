@@ -1,9 +1,9 @@
-### control-flow helpers.
+# control-flow helpers.
 
  Signals are implemented with launch()/finalize().  A signal id is just a
  string, so libraries can define their own exceptions without changing the
  runtime.
-####
+#
 
 # Raise a control-flow signal. #
 throw = (err) -> launch("error", err);
@@ -23,13 +23,13 @@ assert = (condition, message) -> {
 	};
 };
 
-### try usage: 
+# try usage: 
  try: {
      throw("err");
  } :: (err) -> {
     println(err);
  };
-###
+#
 
 Exports = {};
 Exports.throw = throw;

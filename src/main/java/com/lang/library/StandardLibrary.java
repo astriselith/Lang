@@ -352,11 +352,83 @@ public final class StandardLibrary implements Library {
     private static final BlockValue READLN_VAL = new BlockValue() {
         @Override
         public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
-            if (!arguments.isEmpty()) {
-                throw new RuntimeException("readln() expects 0 arguments");
+            if (arguments.size() > 1) {
+                throw new RuntimeException("readln() expects 0 or 1 arguments");
             }
 
-            return ValueResult.of(ValueResult.NORMAL, null, Value.ofString(SCANNER.nextLine()));
+            if (arguments.isEmpty()) {
+                return ValueResult.of(
+                        ValueResult.NORMAL,
+                        null,
+                        Value.ofString(SCANNER.nextLine()));
+            }
+
+            ValueResult typeResult = rt.accept(arguments.get(0));
+
+            if (typeResult.isLaunched()) {
+                return typeResult;
+            }
+
+            Value type = typeResult.getValue();
+
+            if (!type.isString()) {
+                throw new RuntimeException("readln() type must be string");
+            }
+
+            String input = SCANNER.nextLine();
+            if (input.isEmpty()) {
+                switch (type.toLString()) {
+                    case "int":
+                        return ValueResult.of(
+                                ValueResult.NORMAL, null, Value.ofInt(0));
+
+                    case "float":
+                        return ValueResult.of(
+                                ValueResult.NORMAL, null, Value.ofFloat(0.0));
+
+                    case "bool":
+                        return ValueResult.of(
+                                ValueResult.NORMAL, null, Value.ofBool(false));
+
+                    case "string":
+                        return ValueResult.of(
+                                ValueResult.NORMAL, null, Value.ofString(""));
+
+                    default:
+                        throw new RuntimeException(
+                                "readln(): unknown type: " + type.toLString());
+                }
+            }
+
+            switch (type.toLString()) {
+                case "int":
+                    return ValueResult.of(
+                            ValueResult.NORMAL,
+                            null,
+                            Value.ofInt(Long.parseLong(input)));
+
+                case "float":
+                    return ValueResult.of(
+                            ValueResult.NORMAL,
+                            null,
+                            Value.ofFloat(Double.parseDouble(input)));
+
+                case "bool":
+                    return ValueResult.of(
+                            ValueResult.NORMAL,
+                            null,
+                            Value.ofBool(Boolean.parseBoolean(input)));
+
+                case "string":
+                    return ValueResult.of(
+                            ValueResult.NORMAL,
+                            null,
+                            Value.ofString(input));
+
+                default:
+                    throw new RuntimeException(
+                            "readln(): unknown type: " + type.toLString());
+            }
         }
     };
 

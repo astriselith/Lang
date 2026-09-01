@@ -178,82 +178,59 @@ public class Parser {
         Expr expr = primary();
 
         while (!stream.isAtEnd()) {
-            boolean hasParens = false;
-            boolean hasColon = false;
+            if (stream.checkAny(LPAREN, COLON)) {
+                boolean hasParens = false;
+                boolean hasColon = false;
 
-            if (stream.match(LPAREN)) {
-                hasParens = true;
                 List<Expr> arguments = new ArrayList<>();
-
-                if (!stream.check(RPAREN)) {
-                    do {
-                        arguments.add(expr());
-                    } while (stream.match(COMMA));
-                }
-
-                if (!stream.check(RPAREN)) {
-                    throw new CompilationException(
-                            EXPECTED_TOKEN_AFTER.format(")", "("), stream.peek());
-                }
-                stream.advance();
-
                 List<Expr> bindings = new ArrayList<>();
 
-                if (stream.check(COLON) && !stream.checkNext(COLON)) {
+                if (stream.match(LPAREN)) {
+                    hasParens = true;
+
+                    if (!stream.check(RPAREN)) {
+                        do {
+                            arguments.add(expr());
+                        } while (stream.match(COMMA));
+                    }
+
+                    if (!stream.match(RPAREN)) {
+                        throw new CompilationException(EXPECTED_TOKEN_AFTER.format(")", "("), stream.peek());
+                    }
+
+                }
+
+                if (stream.match(COLON)) {
                     hasColon = true;
-                    stream.advance();
+
                     do {
                         bindings.add(expr());
-                    } while (stream.matchSequence(COLON, COLON));
+                    } while (stream.match(BAR));
                 }
 
                 Positioned endPos = expr;
+
                 if (!arguments.isEmpty()) {
                     endPos = arguments.get(arguments.size() - 1);
-                } else if (!bindings.isEmpty()) {
+                }
+
+                if (!bindings.isEmpty()) {
                     endPos = bindings.get(bindings.size() - 1);
                 }
 
-                expr = new CallExpr(
-                        expr,
-                        arguments,
-                        bindings,
-                        hasParens,
-                        hasColon,
-                        between(expr, endPos));
-                continue;
-            }
+                expr = new CallExpr(expr, arguments, bindings, hasParens, hasColon, between(expr, endPos));
 
-            if (stream.check(COLON) && !stream.checkNext(COLON)) {
-                hasColon = true;
-                stream.advance();
-                List<Expr> bindings = new ArrayList<>();
-
-                do {
-                    bindings.add(expr());
-                } while (stream.matchSequence(COLON, COLON));
-
-                Positioned endPos = bindings.get(bindings.size() - 1);
-
-                expr = new CallExpr(
-                        expr,
-                        List.of(),
-                        bindings,
-                        hasParens,
-                        hasColon,
-                        between(expr, endPos));
                 continue;
             }
 
             if (stream.match(DOT)) {
                 if (!stream.check(IDENTIFIER)) {
-                    throw new CompilationException(
-                            EXPECTED_TOKEN.format(IDENTIFIER), stream.peek());
+                    throw new CompilationException(EXPECTED_TOKEN.format(IDENTIFIER), stream.peek());
                 }
+
                 Token nameToken = stream.advance();
-                expr = new MemberAccessExpr(
-                        expr,
-                        new Identifier(nameToken.lexeme, pos(nameToken)),
+
+                expr = new MemberAccessExpr(expr, new Identifier(nameToken.lexeme, pos(nameToken)),
                         between(expr, nameToken));
                 continue;
             }
@@ -320,8 +297,8 @@ public class Parser {
         boolean hasArrow = false;
         boolean isSingleExpr = false;
 
-        List<RefExpr> params = new ArrayList<>();
-        List<RefExpr> attachments = new ArrayList<>();
+        List<Identifier> parameters = new ArrayList<>();
+        List<Identifier> attachments = new ArrayList<>();
 
         if (stream.match(LPAREN)) {
             hasParens = true;
@@ -329,15 +306,14 @@ public class Parser {
                 if (!stream.check(IDENTIFIER)) {
                     throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek().lexeme), stream.peek());
                 }
-
-                params.add(ref());
+                Token paramToken = stream.advance();
+                parameters.add(new Identifier(paramToken.lexeme, pos(paramToken)));
                 if (!stream.match(COMMA)) {
                     break;
                 }
             }
             if (!stream.check(RPAREN)) {
-                throw new CompilationException(
-                        EXPECTED_TOKEN_AFTER.format(")", "("), stream.peek());
+                throw new CompilationException(EXPECTED_TOKEN_AFTER.format(")", "("), stream.peek());
             }
             stream.advance();
         }
@@ -348,8 +324,9 @@ public class Parser {
                 if (!stream.check(IDENTIFIER)) {
                     throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek().lexeme), stream.peek());
                 }
-                attachments.add(ref());
-                if (!stream.matchSequence(COLON, COLON)) {
+                Token attachToken = stream.advance();
+                attachments.add(new Identifier(attachToken.lexeme, pos(attachToken)));
+                if (!stream.match(BAR)) {
                     break;
                 }
             }
@@ -366,16 +343,14 @@ public class Parser {
                 try {
                     expressions.add(expr());
                     if (!stream.check(SEMICOLON)) {
-                        throw new CompilationException(
-                                EXPECTED_TOKEN_AFTER.format(";", "expression"), stream.previous());
+                        throw new CompilationException(EXPECTED_TOKEN_AFTER.format(";", "expression"),
+                                stream.previous());
                     }
                     stream.advance();
                 } catch (CompilationException exception) {
                     unit.addError(TAG, exception);
-                    while (!stream.isAtEnd()
-                            && !stream.check(EOF)
-                            && !stream.check(SEMICOLON)
-                            && !stream.check(RBRACE)) {
+                    while (!stream.isAtEnd() && !stream.check(EOF) &&
+                            !stream.check(SEMICOLON) && !stream.check(RBRACE)) {
                         stream.advance();
                     }
                     if (stream.check(SEMICOLON)) {
@@ -397,7 +372,7 @@ public class Parser {
         }
 
         return new BlockExpr(
-                params,
+                parameters,
                 attachments,
                 expressions,
                 hasParens,

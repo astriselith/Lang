@@ -31,7 +31,7 @@ public class BlockValue extends Value {
             for (int i = 0; i < block.parameters.size(); i++) {
                 if (i > 0)
                     sb.append(", ");
-                sb.append(block.parameters.get(i).name.source);
+                sb.append(block.parameters.get(i).source);
             }
         }
         sb.append(") -> {}");
@@ -134,7 +134,7 @@ public class BlockValue extends Value {
         BlockValue newBlock = new BlockValue(block, parent);
 
         for (int i = 0; i < paramCount; i++) {
-            String name = block.parameters.get(i).name.source;
+            String name = block.parameters.get(i).source;
             ValueResult argResult = rt.accept(arguments.get(i));
             if (argResult.isLaunched()) {
                 return argResult;
@@ -144,7 +144,7 @@ public class BlockValue extends Value {
         }
 
         for (int i = 0; i < bindings.size(); i++) {
-            String name = block.attachments.get(i).name.source;
+            String name = block.attachments.get(i).source;
             ValueResult bindResult = rt.accept(bindings.get(i));
             if (bindResult.isLaunched()) {
                 return bindResult;

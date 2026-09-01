@@ -12,14 +12,11 @@ import com.lang.value.ValueResult;
 
 public class Evaluator implements Execution {
     private final Deque<BlockValue> scopes;
-    private final Deque<Value> values;
 
     private final String workingDir;
 
     public Evaluator(String workingDir) {
         this.scopes = new ArrayDeque<>();
-        this.values = new ArrayDeque<>();
-
         this.workingDir = workingDir;
     }
 
@@ -46,21 +43,6 @@ public class Evaluator implements Execution {
     @Override
     public BlockValue popScope() {
         return scopes.pop();
-    }
-
-    @Override
-    public void pushValue(Value value) {
-        values.push(value);
-    }
-
-    @Override
-    public Value popValue() {
-        return values.pop();
-    }
-
-    @Override
-    public Value peekValue() {
-        return values.peek();
     }
 
     @Override
@@ -107,6 +89,7 @@ public class Evaluator implements Execution {
             case LiteralExpr.STRING:
                 String str = StringUtils.stripQuotes(expr.lexeme);
                 str = StringUtils.unescape(str);
+                str = StringUtils.replace(str, peekScope().getLocals());
                 result = Value.ofString(str);
                 break;
             default:

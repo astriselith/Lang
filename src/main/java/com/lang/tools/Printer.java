@@ -92,7 +92,7 @@ public class Printer implements ExprVisitor {
             for (int i = 0; i < expr.parameters.size(); i++) {
                 if (i > 0)
                     sb.append(", ");
-                sb.append(expr.parameters.get(i).accept(this));
+                sb.append(expr.parameters.get(i).source);
             }
             sb.append(")");
         }
@@ -102,7 +102,7 @@ public class Printer implements ExprVisitor {
             for (int i = 0; i < expr.attachments.size(); i++) {
                 if (i > 0)
                     sb.append(" :: ");
-                sb.append(expr.attachments.get(i).accept(this));
+                sb.append(expr.attachments.get(i).source);
             }
         }
 

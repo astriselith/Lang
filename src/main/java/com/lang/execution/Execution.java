@@ -4,7 +4,6 @@ import com.lang.ast.Expr;
 import com.lang.ast.ExprVisitor;
 import com.lang.ast.Program;
 import com.lang.value.BlockValue;
-import com.lang.value.Value;
 import com.lang.value.ValueResult;
 
 public interface Execution extends ExprVisitor {
@@ -20,10 +19,4 @@ public interface Execution extends ExprVisitor {
     BlockValue popScope();
 
     BlockValue peekScope();
-
-    void pushValue(Value value);
-
-    Value popValue();
-
-    Value peekValue();
 }

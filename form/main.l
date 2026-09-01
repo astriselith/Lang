@@ -6,43 +6,38 @@ Preencha algumas informações:
 requeridos: nome e idade.
 ");
 
-read = (message) -> {
+read = (message, type) -> {
 	finalize("return");
+	return = (val) -> launch("return", val);
 
+	# body #
     print(message);
-    line = readln();
-	
-    launch("return", line);
+    value = readln(type);
+    return(value);
 };
 
-name = read("Nome: ");
-age = read("Idade: ");
-
-println();
+name = read("Nome: ", "string");
+age = read("Idade: ", "int");
 
 try: {
 	assert(name != "", "O nome não foi preenchido");
-} :: (err) -> {
-	println(err);
+} | (err) -> {
+	println("Erro: @err");
 };
 
 try: {
-	assert(age != "", "A idade não foi preenchida");
-} :: (err) -> {
-	println(err);
+	assert(age != 0, "A idade não foi preenchida");
+} | (err) -> {
+	println("Erro: @err");
 };
 
 println();
+
 println("Completo");
 
 println();
-
-
-
-
-println();
-println("Name: " + name);
-println("Age: " + age);
+println("Name: @name");
+println("Age: @age");
 
 
 

@@ -8,11 +8,11 @@
 # Raise a control-flow signal. #
 throw = (err) -> launch("error", err);
 
-# try : body :: collector is useful when composing a protected operation. #
-try = : body :: collector -> {
+# try : body | report is useful when composing a protected operation. #
+try = : body | report -> {
     err = finalize("error", body());
     if(err != null): {
-        collector(err);
+        report(err);
     };
 };
 
@@ -26,7 +26,7 @@ assert = (condition, message) -> {
 # try usage: 
  try: {
      throw("err");
- } :: (err) -> {
+ } | (err) -> {
     println(err);
  };
 #

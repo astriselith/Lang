@@ -242,9 +242,9 @@ public class Main {
 
         if (result.isLaunched()) {
             System.out.println(
-                    "→ Launch: " + result.getId() + " = " + result.getValue().toLString());
+                    "→ Launch: " + result.getId() + " = " + result.getValue().valueToString());
         } else if (result.getValue() != null && !result.getValue().isNull()) {
-            System.out.println("→ " + result.getValue().toLString());
+            System.out.println("→ " + result.getValue().valueToString());
         }
 
         System.out.println();

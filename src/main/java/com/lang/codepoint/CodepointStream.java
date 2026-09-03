@@ -26,26 +26,6 @@ public abstract class CodepointStream extends ObjectBuffer {
         return value != null ? (Integer) value : Codepoint.EOF;
     }
 
-    public int peekNext() {
-        Object value = offset(1);
-        return value != null ? (Integer) value : Codepoint.EOF;
-    }
-
-    public int peekNextNext() {
-        Object value = offset(2);
-        return value != null ? (Integer) value : Codepoint.EOF;
-    }
-
-    public int peekBack() {
-        Object value = offset(-1);
-        return value != null ? (Integer) value : Codepoint.EOF;
-    }
-
-    public int peekBackBack() {
-        Object value = offset(-2);
-        return value != null ? (Integer) value : Codepoint.EOF;
-    }
-
     public int advance() {
         Object current = offset(0);
         if (current != null && (Integer) current != Codepoint.EOF) {
@@ -63,22 +43,6 @@ public abstract class CodepointStream extends ObjectBuffer {
     public boolean checkIndex(int index, int value) {
         Object current = offset(index);
         return current != null && (Integer) current == value;
-    }
-
-    public boolean checkNext(int value) {
-        return checkIndex(1, value);
-    }
-
-    public boolean checkNextNext(int value) {
-        return checkIndex(2, value);
-    }
-
-    public boolean checkBack(int value) {
-        return checkIndex(-1, value);
-    }
-
-    public boolean checkBackBack(int value) {
-        return checkIndex(-2, value);
     }
 
     public boolean checkAny(int... values) {
@@ -99,21 +63,6 @@ public abstract class CodepointStream extends ObjectBuffer {
         return false;
     }
 
-    public boolean checkNextAny(int... values) {
-        return checkIndexAny(1, values);
-    }
-
-    public boolean checkNextNextAny(int... values) {
-        return checkIndexAny(2, values);
-    }
-
-    public boolean checkBackAny(int... values) {
-        return checkIndexAny(-1, values);
-    }
-
-    public boolean checkBackBackAny(int... values) {
-        return checkIndexAny(-2, values);
-    }
 
     public boolean checkSequence(int... values) {
         if (values == null || values.length == 0) return true;
@@ -129,14 +78,6 @@ public abstract class CodepointStream extends ObjectBuffer {
             if (!checkIndex(index + i, values[i])) return false;
         }
         return true;
-    }
-
-    public boolean checkNextSequence(int... values) {
-        return checkIndexSequence(1, values);
-    }
-
-    public boolean checkBackSequence(int... values) {
-        return checkIndexSequence(-1, values);
     }
 
     public boolean match(int value) {

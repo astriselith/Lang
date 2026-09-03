@@ -1,6 +1,6 @@
 package com.lang.value;
 
-public class BoolValue extends Value {
+public class BoolValue implements Value {
     public static final BoolValue TRUE = new BoolValue(true);
     public static final BoolValue FALSE = new BoolValue(false);
 
@@ -15,24 +15,14 @@ public class BoolValue extends Value {
     }
 
     @Override
-    public boolean equalsBool(Value value) {
+    public boolean valueEquals(Value value) {
         return value != null
                 && value.isBool()
-                && equalsLBool(value.toLBool());
+                && value.asBool().getValue() == this.value;
     }
 
     @Override
-    public boolean equalsLBool(boolean value) {
-        return this.value == value;
-    }
-
-    @Override
-    public boolean toLBool() {
-        return value;
-    }
-
-    @Override
-    public String toLString() {
+    public String valueToString() {
         return Boolean.toString(value);
     }
 

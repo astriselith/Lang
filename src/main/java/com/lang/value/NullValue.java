@@ -1,17 +1,17 @@
 package com.lang.value;
 
-public class NullValue extends Value {
+public class NullValue implements Value {
     public static final NullValue INSTANCE = new NullValue();
 
     private NullValue() {}
 
     @Override
-    public boolean equalsNull(Value value) {
+    public boolean valueEquals(Value value) {
         return value != null && value.isNull();
     }
 
     @Override
-    public String toLString() {
+    public String valueToString() {
         return "null";
     }
 }

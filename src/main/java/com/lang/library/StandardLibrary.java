@@ -1,6 +1,7 @@
 package com.lang.library;
 
 import com.lang.value.BlockValue;
+import com.lang.value.CallableValue;
 import com.lang.ast.Expr;
 import com.lang.ast.Program;
 import com.lang.execution.Execution;
@@ -26,21 +27,19 @@ public final class StandardLibrary implements Library {
 
     private static final Scanner SCANNER = new Scanner(System.in);
 
-    public static final BlockValue INCLUDE_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    public static final CallableValue INCLUDE_VAL = (rt, arguments, bindings) -> {
 
             if (arguments.size() != 1) {
                 throw new RuntimeException("include(name) expects 1 argument");
             }
 
-            ValueResult nameResult = rt.accept(arguments.get(0));
+            ValueResult nameResult = rt.execute(arguments.get(0));
 
             if (nameResult.isLaunched()) {
                 return nameResult;
             }
 
-            String name = nameResult.getValue().toLString();
+            String name = nameResult.getValue().valueToString();
 
             File file = new File(rt.workingDir(), name);
 
@@ -88,24 +87,21 @@ public final class StandardLibrary implements Library {
             exports.getLocals().forEach(rt.peekScope()::setLocal);
 
             return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
-        }
     };
 
-    public static final BlockValue IMPORT_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    public static final CallableValue IMPORT_VAL = (rt, arguments, bindings) -> {
 
             if (arguments.size() != 1) {
                 throw new RuntimeException("import(name) expects 1 argument");
             }
 
-            ValueResult nameResult = rt.accept(arguments.get(0));
+            ValueResult nameResult = rt.execute(arguments.get(0));
 
             if (nameResult.isLaunched()) {
                 return nameResult;
             }
 
-            String name = nameResult.getValue().toLString();
+            String name = nameResult.getValue().valueToString();
 
             File file = new File(rt.workingDir(), name);
 
@@ -153,17 +149,14 @@ public final class StandardLibrary implements Library {
             }
 
             throw new RuntimeException("Module did not export: " + name);
-        }
     };
 
-    public static final BlockValue EXPORT_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    public static final CallableValue EXPORT_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() != 1) {
                 throw new RuntimeException("export(obj) expects 1 argument");
             }
 
-            ValueResult objResult = rt.accept(arguments.get(0));
+            ValueResult objResult = rt.execute(arguments.get(0));
             if (objResult.isLaunched()) {
                 return objResult;
             }
@@ -171,12 +164,9 @@ public final class StandardLibrary implements Library {
             Value obj = objResult.getValue();
 
             return ValueResult.of(ValueResult.LAUNCHED, "module-export", obj);
-        }
     };
 
-    private static final BlockValue IF_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue IF_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() != 1) {
                 throw new RuntimeException("if(condition) expects 1 argument");
             }
@@ -185,7 +175,7 @@ public final class StandardLibrary implements Library {
                 throw new RuntimeException("if(condition) requires 1 or 2 bindings (then) or (then, else)");
             }
 
-            ValueResult condResult = rt.accept(arguments.get(0));
+            ValueResult condResult = rt.execute(arguments.get(0));
             if (condResult.isLaunched()) {
                 return condResult;
             }
@@ -195,7 +185,7 @@ public final class StandardLibrary implements Library {
                 throw new RuntimeException("if() condition must be boolean");
             }
 
-            boolean condition = cond.toLBool();
+            boolean condition = cond.asBool().getValue();
             Expr chosen;
 
             if (bindings.size() == 1) {
@@ -207,23 +197,20 @@ public final class StandardLibrary implements Library {
                 chosen = condition ? bindings.get(0) : bindings.get(1);
             }
 
-            ValueResult blockResult = rt.accept(chosen);
+            ValueResult blockResult = rt.execute(chosen);
             if (blockResult.isLaunched()) {
                 return blockResult;
             }
 
             Value blockValue = blockResult.getValue();
-            if (!blockValue.isBlock()) {
-                throw new RuntimeException("if() then and else must evaluate to blocks");
+            if (!blockValue.isCallable()) {
+                throw new RuntimeException("if() then and else must evaluate to callable values");
             }
 
-            return blockValue.asBlock().call(rt, new ArrayList<>(), new ArrayList<>());
-        }
+            return blockValue.asCallable().call(rt, new ArrayList<>(), new ArrayList<>());
     };
 
-    private static final BlockValue WHILE_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue WHILE_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() != 1) {
                 throw new RuntimeException("while(condition) expects 1 argument");
             }
@@ -238,7 +225,7 @@ public final class StandardLibrary implements Library {
             ValueResult result = ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
 
             while (true) {
-                ValueResult condResult = rt.accept(condition);
+                ValueResult condResult = rt.execute(condition);
 
                 if (condResult.isLaunched()) {
                     if ("break".equals(condResult.getId())) {
@@ -257,11 +244,11 @@ public final class StandardLibrary implements Library {
                     throw new RuntimeException("while() condition must return boolean");
                 }
 
-                if (!cond.toLBool()) {
+                if (!cond.asBool().getValue()) {
                     break;
                 }
 
-                ValueResult bodyResult = rt.accept(body);
+                ValueResult bodyResult = rt.execute(body);
 
                 if (bodyResult.isLaunched()) {
                     if ("break".equals(bodyResult.getId())) {
@@ -276,82 +263,67 @@ public final class StandardLibrary implements Library {
 
                 Value bodyValue = bodyResult.getValue();
 
-                if (bodyValue != null && bodyValue.isBlock()) {
-                    result = bodyValue.asBlock().call(rt, new ArrayList<>(), new ArrayList<>());
+                if (bodyValue != null && bodyValue.isCallable()) {
+                    result = bodyValue.asCallable().call(rt, new ArrayList<>(), new ArrayList<>());
                 } else {
                     result = ValueResult.of(ValueResult.NORMAL, null, bodyValue);
                 }
             }
 
             return result;
-        }
     };
 
-    private static final BlockValue BREAK_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue BREAK_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() > 1) {
                 throw new RuntimeException("break() expects 0 or 1 arguments");
             }
             if (arguments.size() == 1) {
-                ValueResult v = rt.accept(arguments.get(0));
+                ValueResult v = rt.execute(arguments.get(0));
                 if (v.isLaunched()) {
                     return v;
                 }
                 return ValueResult.of(ValueResult.LAUNCHED, "break", v.getValue());
             }
             return ValueResult.of(ValueResult.LAUNCHED, "break", Value.ofNull());
-        }
     };
 
-    private static final BlockValue CONTINUE_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue CONTINUE_VAL = (rt, arguments, bindings) -> {
             if (!arguments.isEmpty()) {
                 throw new RuntimeException("continue() expects 0 arguments");
             }
             return ValueResult.of(ValueResult.LAUNCHED, "continue", Value.ofNull());
-        }
     };
 
-    private static final BlockValue PRINTLN_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue PRINTLN_VAL = (rt, arguments, bindings) -> {
             if (arguments.isEmpty()) {
                 System.out.println();
                 return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
             }
 
-            ValueResult v = rt.accept(arguments.get(0));
+            ValueResult v = rt.execute(arguments.get(0));
             if (v.isLaunched()) {
                 return v;
             }
-            System.out.println(v.getValue().toLString());
+            System.out.println(v.getValue().valueToString());
 
             return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
-        }
     };
 
-    private static final BlockValue PRINT_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue PRINT_VAL = (rt, arguments, bindings) -> {
             if (arguments.isEmpty()) {
                 throw new RuntimeException("print() expects 1 argument");
             }
 
-            ValueResult v = rt.accept(arguments.get(0));
+            ValueResult v = rt.execute(arguments.get(0));
             if (v.isLaunched()) {
                 return v;
             }
-            System.out.print(v.getValue().toLString());
+            System.out.print(v.getValue().valueToString());
 
             return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
-        }
     };
 
-    private static final BlockValue READLN_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue READLN_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() > 1) {
                 throw new RuntimeException("readln() expects 0 or 1 arguments");
             }
@@ -363,7 +335,7 @@ public final class StandardLibrary implements Library {
                         Value.ofString(SCANNER.nextLine()));
             }
 
-            ValueResult typeResult = rt.accept(arguments.get(0));
+            ValueResult typeResult = rt.execute(arguments.get(0));
 
             if (typeResult.isLaunched()) {
                 return typeResult;
@@ -377,7 +349,7 @@ public final class StandardLibrary implements Library {
 
             String input = SCANNER.nextLine();
             if (input.isEmpty()) {
-                switch (type.toLString()) {
+                switch (type.valueToString()) {
                     case "int":
                         return ValueResult.of(
                                 ValueResult.NORMAL, null, Value.ofInt(0));
@@ -396,11 +368,11 @@ public final class StandardLibrary implements Library {
 
                     default:
                         throw new RuntimeException(
-                                "readln(): unknown type: " + type.toLString());
+                                "readln(): unknown type: " + type.valueToString());
                 }
             }
 
-            switch (type.toLString()) {
+            switch (type.valueToString()) {
                 case "int":
                     return ValueResult.of(
                             ValueResult.NORMAL,
@@ -427,19 +399,16 @@ public final class StandardLibrary implements Library {
 
                 default:
                     throw new RuntimeException(
-                            "readln(): unknown type: " + type.toLString());
+                            "readln(): unknown type: " + type.valueToString());
             }
-        }
     };
 
-    private static final BlockValue LAUNCH_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue LAUNCH_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() != 1 && arguments.size() != 2) {
                 throw new RuntimeException("launch(id) or launch(id, value) expects 1 or 2 arguments");
             }
 
-            ValueResult idResult = rt.accept(arguments.get(0));
+            ValueResult idResult = rt.execute(arguments.get(0));
             if (idResult.isLaunched()) {
                 return idResult;
             }
@@ -451,7 +420,7 @@ public final class StandardLibrary implements Library {
 
             Value value = Value.ofNull();
             if (arguments.size() == 2) {
-                ValueResult valueResult = rt.accept(arguments.get(1));
+                ValueResult valueResult = rt.execute(arguments.get(1));
 
                 if (valueResult.isLaunched()) {
                     return valueResult;
@@ -460,18 +429,15 @@ public final class StandardLibrary implements Library {
                 value = valueResult.getValue();
             }
 
-            return ValueResult.of(ValueResult.LAUNCHED, id.toLString(), value);
-        }
+            return ValueResult.of(ValueResult.LAUNCHED, id.valueToString(), value);
     };
 
-    private static final BlockValue FINALIZE_VAL = new BlockValue() {
-        @Override
-        public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
+    private static final CallableValue FINALIZE_VAL = (rt, arguments, bindings) -> {
             if (arguments.size() != 1 && arguments.size() != 2) {
                 throw new RuntimeException("finalize(body) or finalize(id, body) expects 1 or 2 arguments");
             }
 
-            ValueResult idResult = rt.accept(arguments.get(0));
+            ValueResult idResult = rt.execute(arguments.get(0));
             if (idResult.isLaunched()) {
                 return idResult;
             }
@@ -483,18 +449,257 @@ public final class StandardLibrary implements Library {
 
             Value body = Value.ofNull();
             if (arguments.size() == 2) {
-                ValueResult bodyResult = rt.accept(arguments.get(1));
-                if (!bodyResult.idEquals(id.toLString())) {
+                ValueResult bodyResult = rt.execute(arguments.get(1));
+                if (!bodyResult.idEquals(id.valueToString())) {
                     return bodyResult;
                 }
 
                 body = bodyResult.getValue();
             }
 
-            rt.peekScope().addCollector(id.toLString());
+            rt.peekScope().addCollector(id.valueToString());
             return ValueResult.of(ValueResult.NORMAL, null, body);
+    };
 
-        }
+    private static final CallableValue ARRAY_OF_VAL = (rt, arguments, bindings) -> {
+            List<Value> elements = new ArrayList<>();
+
+            for (Expr arg : arguments) {
+                ValueResult result = rt.execute(arg);
+                if (result.isLaunched()) {
+                    return result;
+                }
+                elements.add(result.getValue());
+            }
+
+            BlockValue array = new BlockValue() {
+                private final List<Value> data = new ArrayList<>(elements);
+
+                {
+                    setLocal("get", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 1) {
+                                throw new RuntimeException("get(index) expects 1 argument");
+                            }
+
+                            ValueResult indexResult = rt.execute(arguments.get(0));
+                            if (indexResult.isLaunched()) {
+                                return indexResult;
+                            }
+
+                            Value indexVal = indexResult.getValue();
+                            if (!indexVal.isInt()) {
+                                throw new RuntimeException("get() index must be integer");
+                            }
+
+                            long index = indexVal.asInt().getValue();
+                            if (index < 0 || index >= data.size()) {
+                                throw new RuntimeException("get() index out of bounds: " + index);
+                            }
+
+                            return ValueResult.of(ValueResult.NORMAL, null, data.get((int) index));
+                    });
+
+                    setLocal("set", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 2) {
+                                throw new RuntimeException("set(index, value) expects 2 arguments");
+                            }
+
+                            ValueResult indexResult = rt.execute(arguments.get(0));
+                            if (indexResult.isLaunched()) {
+                                return indexResult;
+                            }
+
+                            Value indexVal = indexResult.getValue();
+                            if (!indexVal.isInt()) {
+                                throw new RuntimeException("set() index must be integer");
+                            }
+
+                            long index = indexVal.asInt().getValue();
+                            if (index < 0 || index >= data.size()) {
+                                throw new RuntimeException("set() index out of bounds: " + index);
+                            }
+
+                            ValueResult valueResult = rt.execute(arguments.get(1));
+                            if (valueResult.isLaunched()) {
+                                return valueResult;
+                            }
+
+                            data.set((int) index, valueResult.getValue());
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
+                    });
+
+                    setLocal("size", (CallableValue) (rt, arguments, bindings) -> {
+                            if (!arguments.isEmpty()) {
+                                throw new RuntimeException("size() expects 0 arguments");
+                            }
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofInt(data.size()));
+                    });
+                }
+            };
+
+            return ValueResult.of(ValueResult.NORMAL, null, array);
+    };
+
+    private static final CallableValue LIST_OF_VAL = (rt, arguments, bindings) -> {
+            List<Value> elements = new ArrayList<>();
+
+            for (Expr arg : arguments) {
+                ValueResult result = rt.execute(arg);
+                if (result.isLaunched()) {
+                    return result;
+                }
+                elements.add(result.getValue());
+            }
+
+            BlockValue list = new BlockValue() {
+                private final List<Value> data = new ArrayList<>(elements);
+
+                {
+                    setLocal("get", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 1) {
+                                throw new RuntimeException("get(index) expects 1 argument");
+                            }
+
+                            ValueResult indexResult = rt.execute(arguments.get(0));
+                            if (indexResult.isLaunched()) {
+                                return indexResult;
+                            }
+
+                            Value indexVal = indexResult.getValue();
+                            if (!indexVal.isInt()) {
+                                throw new RuntimeException("get() index must be integer");
+                            }
+
+                            long index = indexVal.asInt().getValue();
+                            if (index < 0 || index >= data.size()) {
+                                throw new RuntimeException("get() index out of bounds: " + index);
+                            }
+
+                            return ValueResult.of(ValueResult.NORMAL, null, data.get((int) index));
+                    });
+
+                    setLocal("set", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 2) {
+                                throw new RuntimeException("set(index, value) expects 2 arguments");
+                            }
+
+                            ValueResult indexResult = rt.execute(arguments.get(0));
+                            if (indexResult.isLaunched()) {
+                                return indexResult;
+                            }
+
+                            Value indexVal = indexResult.getValue();
+                            if (!indexVal.isInt()) {
+                                throw new RuntimeException("set() index must be integer");
+                            }
+
+                            long index = indexVal.asInt().getValue();
+                            if (index < 0 || index >= data.size()) {
+                                throw new RuntimeException("set() index out of bounds: " + index);
+                            }
+
+                            ValueResult valueResult = rt.execute(arguments.get(1));
+                            if (valueResult.isLaunched()) {
+                                return valueResult;
+                            }
+
+                            data.set((int) index, valueResult.getValue());
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
+                    });
+
+                    setLocal("size", (CallableValue) (rt, arguments, bindings) -> {
+                            if (!arguments.isEmpty()) {
+                                throw new RuntimeException("size() expects 0 arguments");
+                            }
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofInt(data.size()));
+                    });
+
+                    setLocal("add", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 1) {
+                                throw new RuntimeException("add(value) expects 1 argument");
+                            }
+
+                            ValueResult valueResult = rt.execute(arguments.get(0));
+                            if (valueResult.isLaunched()) {
+                                return valueResult;
+                            }
+
+                            data.add(valueResult.getValue());
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
+                    });
+
+                    setLocal("remove", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 1) {
+                                throw new RuntimeException("remove(index) expects 1 argument");
+                            }
+
+                            ValueResult indexResult = rt.execute(arguments.get(0));
+                            if (indexResult.isLaunched()) {
+                                return indexResult;
+                            }
+
+                            Value indexVal = indexResult.getValue();
+                            if (!indexVal.isInt()) {
+                                throw new RuntimeException("remove() index must be integer");
+                            }
+
+                            long index = indexVal.asInt().getValue();
+                            if (index < 0 || index >= data.size()) {
+                                throw new RuntimeException("remove() index out of bounds: " + index);
+                            }
+
+                            Value removed = data.remove((int) index);
+                            return ValueResult.of(ValueResult.NORMAL, null, removed);
+                    });
+
+                    setLocal("clear", (CallableValue) (rt, arguments, bindings) -> {
+                            if (!arguments.isEmpty()) {
+                                throw new RuntimeException("clear() expects 0 arguments");
+                            }
+                            data.clear();
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofNull());
+                    });
+
+                    setLocal("contains", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 1) {
+                                throw new RuntimeException("contains(value) expects 1 argument");
+                            }
+
+                            ValueResult valueResult = rt.execute(arguments.get(0));
+                            if (valueResult.isLaunched()) {
+                                return valueResult;
+                            }
+
+                            Value searchValue = valueResult.getValue();
+                            boolean found = data.contains(searchValue);
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofBool(found));
+                    });
+
+                    setLocal("indexOf", (CallableValue) (rt, arguments, bindings) -> {
+                            if (arguments.size() != 1) {
+                                throw new RuntimeException("indexOf(value) expects 1 argument");
+                            }
+
+                            ValueResult valueResult = rt.execute(arguments.get(0));
+                            if (valueResult.isLaunched()) {
+                                return valueResult;
+                            }
+
+                            Value searchValue = valueResult.getValue();
+                            int index = data.indexOf(searchValue);
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofInt(index));
+                    });
+
+                    setLocal("isEmpty", (CallableValue) (rt, arguments, bindings) -> {
+                            if (!arguments.isEmpty()) {
+                                throw new RuntimeException("isEmpty() expects 0 arguments");
+                            }
+                            return ValueResult.of(ValueResult.NORMAL, null, Value.ofBool(data.isEmpty()));
+                    });
+                }
+            };
+
+            return ValueResult.of(ValueResult.NORMAL, null, list);
     };
 
     private StandardLibrary() {
@@ -525,6 +730,9 @@ public final class StandardLibrary implements Library {
 
         block.setLocal("launch", LAUNCH_VAL);
         block.setLocal("finalize", FINALIZE_VAL);
+
+        block.setLocal("arrayOf", ARRAY_OF_VAL);
+        block.setLocal("listOf", LIST_OF_VAL);
     }
 
     private static Program compileFile(Execution rt, String name) {

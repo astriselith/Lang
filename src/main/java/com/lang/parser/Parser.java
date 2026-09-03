@@ -242,20 +242,42 @@ public class Parser {
     }
 
     private Expr primary() {
-        if (stream.checkAny(NULL, BOOL, INT, FLOAT, STRING)) {
-            return literal();
-        }
-
-        if (stream.check(IDENTIFIER)) {
-            return ref();
-        }
-
-        if (stream.checkAny(LPAREN, COLON, LBRACE)) {
-            return block();
-        }
-
-        throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek()), stream.peek());
+    if (stream.checkAny(COLON, LBRACE) ||
+        stream.checkSequence(LPAREN, RPAREN, MINUS, RANGLE) ||
+        stream.checkSequence(LPAREN, RPAREN, COLON) ||
+        stream.checkSequence(LPAREN, IDENTIFIER, RPAREN, MINUS, RANGLE) ||
+        stream.checkSequence(LPAREN, IDENTIFIER, RPAREN, COLON) ||
+        stream.checkSequence(LPAREN, IDENTIFIER, COMMA, IDENTIFIER, RPAREN, MINUS, RANGLE) ||
+        stream.checkSequence(LPAREN, IDENTIFIER, COMMA, IDENTIFIER, RPAREN, COLON)) {
+        return block();
     }
+
+    if (stream.checkAny(NULL, BOOL, INT, FLOAT, STRING)) {
+        return literal();
+    }
+
+    if (stream.check(IDENTIFIER)) {
+        return ref();
+    }
+
+    if (stream.check(LPAREN)) {
+        return parenthesized();
+    }
+
+    throw new CompilationException(UNEXPECTED_TOKEN.format(stream.peek()), stream.peek());
+}
+
+private Expr parenthesized() {
+    Token start = stream.advance();
+    Expr expr = expr();
+    
+    if (!stream.check(RPAREN)) {
+        throw new CompilationException(EXPECTED_TOKEN_AFTER.format(")", "("), stream.peek());
+    }
+    Token end = stream.advance();
+    
+    return new ParenthesizedExpr(expr, between(start, end));
+}
 
     private LiteralExpr literal() {
         Token t = stream.advance();

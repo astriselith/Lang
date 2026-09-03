@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class StringUtils {
 
-    public static String replace(String string, Map values) {
+    public static String replace(String string, Map<String, ?> values) {
         StringBuilder result = new StringBuilder(string.length());
 
         for (int i = 0; i < string.length();) {

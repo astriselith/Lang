@@ -1,6 +1,6 @@
 package com.lang.value;
 
-public class IntValue extends Value {
+public class IntValue implements Value {
     private static final int CACHE_MIN = -128;
     private static final int CACHE_MAX = 127;
     private static final IntValue[] CACHE = new IntValue[CACHE_MAX - CACHE_MIN + 1];
@@ -25,27 +25,12 @@ public class IntValue extends Value {
     }
 
     @Override
-    public boolean equalsInt(Value value) {
-        return value != null && value.isInt() && equalsLInt(value.toLInt());
+    public boolean valueEquals(Value value) {
+        return value != null && value.isInt() && value.asInt().getValue() == this.value;
     }
 
     @Override
-    public boolean equalsLInt(long value) {
-        return this.value == value;
-    }
-
-    @Override
-    public long toLInt() {
-        return value;
-    }
-
-    @Override
-    public double toLFloat() {
-        return (double) value;
-    }
-
-    @Override
-    public String toLString() {
+    public String valueToString() {
         return Long.toString(value);
     }
 

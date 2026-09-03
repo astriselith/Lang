@@ -12,7 +12,7 @@ public interface Execution extends ExprVisitor {
 
     ValueResult execute(Program program, BlockValue initScope);
 
-    ValueResult accept(Expr expr);
+    ValueResult execute(Expr expr);
 
     void pushScope(BlockValue scope);
 

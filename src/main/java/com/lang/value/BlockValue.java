@@ -6,7 +6,7 @@ import com.lang.execution.Execution;
 
 import java.util.*;
 
-public class BlockValue extends Value {
+public class BlockValue implements CallableValue {
     protected final BlockExpr block;
     protected final Map<String, Value> locals;
     protected final Set<String> collectors;
@@ -24,7 +24,7 @@ public class BlockValue extends Value {
     }
 
     @Override
-    public String toLString() {
+    public String valueToString() {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         if (block != null && block.parameters != null) {
@@ -108,11 +108,8 @@ public class BlockValue extends Value {
         return block;
     }
 
-    public ValueResult call(
-            Execution rt,
-            List<Expr> arguments,
-            List<Expr> bindings) {
-
+    @Override
+    public ValueResult call(Execution rt, List<Expr> arguments, List<Expr> bindings) {
         int paramCount = block.parameters.size();
 
         if (paramCount != arguments.size()) {
@@ -135,7 +132,7 @@ public class BlockValue extends Value {
 
         for (int i = 0; i < paramCount; i++) {
             String name = block.parameters.get(i).source;
-            ValueResult argResult = rt.accept(arguments.get(i));
+            ValueResult argResult = rt.execute(arguments.get(i));
             if (argResult.isLaunched()) {
                 return argResult;
             }
@@ -145,7 +142,7 @@ public class BlockValue extends Value {
 
         for (int i = 0; i < bindings.size(); i++) {
             String name = block.attachments.get(i).source;
-            ValueResult bindResult = rt.accept(bindings.get(i));
+            ValueResult bindResult = rt.execute(bindings.get(i));
             if (bindResult.isLaunched()) {
                 return bindResult;
             }
@@ -155,7 +152,7 @@ public class BlockValue extends Value {
         rt.pushScope(newBlock);
 
         for (Expr expression : block.expressions) {
-            ValueResult result = rt.accept(expression);
+            ValueResult result = rt.execute(expression);
 
             if (result.isLaunched()) {
                 rt.popScope();

@@ -7,6 +7,7 @@ import com.lang.ast.*;
 import com.lang.execution.Execution;
 import com.lang.util.StringUtils;
 import com.lang.value.BlockValue;
+import com.lang.value.CallableValue;
 import com.lang.value.Value;
 import com.lang.value.ValueResult;
 
@@ -26,7 +27,7 @@ public class Evaluator implements Execution {
     }
 
     @Override
-    public ValueResult accept(Expr expr) {
+    public ValueResult execute(Expr expr) {
         return (ValueResult) expr.accept(this);
     }
 
@@ -171,8 +172,8 @@ public class Evaluator implements Execution {
         } else if (op.equals("!=")) {
             result = Value.ofBool(!((left.isNull() && right.isNull()) || left.equals(right)));
         } else if (left.isInt() && right.isInt()) {
-            long l = left.toLInt();
-            long r = right.toLInt();
+            long l = left.asInt().getValue();
+            long r = right.asInt().getValue();
             switch (op) {
                 case "+":
                     result = Value.ofInt(l + r);
@@ -203,8 +204,8 @@ public class Evaluator implements Execution {
                     break;
             }
         } else if ((left.isInt() || left.isFloat()) && (right.isInt() || right.isFloat())) {
-            double l = left.isInt() ? left.toLInt() : left.toLFloat();
-            double r = right.isInt() ? right.toLInt() : right.toLFloat();
+            double l = left.isInt() ? left.asInt().getValue() : left.asFloat().getValue();
+            double r = right.isInt() ? right.asInt().getValue() : right.asFloat().getValue();
             switch (op) {
                 case "+":
                     result = Value.ofFloat(l + r);
@@ -235,8 +236,8 @@ public class Evaluator implements Execution {
                     break;
             }
         } else if (left.isBool() && right.isBool()) {
-            boolean l = left.toLBool();
-            boolean r = right.toLBool();
+            boolean l = left.asBool().getValue();
+            boolean r = right.asBool().getValue();
             switch (op) {
                 case "&&":
                     result = Value.ofBool(l && r);
@@ -246,8 +247,8 @@ public class Evaluator implements Execution {
                     break;
             }
         } else if (left.isString() && right.isString()) {
-            String l = left.toLString();
-            String r = right.toLString();
+            String l = left.valueToString();
+            String r = right.valueToString();
             switch (op) {
                 case "+":
                     result = Value.ofString(l + r);
@@ -267,9 +268,9 @@ public class Evaluator implements Execution {
             }
         } else if (op.equals("+")) {
             if (left.isString()) {
-                result = Value.ofString(left.toLString() + right.toString());
+                result = Value.ofString(left.valueToString() + right.toString());
             } else if (right.isString()) {
-                result = Value.ofString(left.toString() + right.toLString());
+                result = Value.ofString(left.toString() + right.valueToString());
             }
         }
 
@@ -303,13 +304,13 @@ public class Evaluator implements Execution {
                 if (!operand.isBool()) {
                     throw new RuntimeException("! requires boolean");
                 }
-                result = Value.ofBool(!operand.toLBool());
+                result = Value.ofBool(!operand.asBool().getValue());
                 break;
             case "-":
                 if (operand.isInt()) {
-                    result = Value.ofInt(-operand.toLInt());
+                    result = Value.ofInt(-operand.asInt().getValue());
                 } else if (operand.isFloat()) {
-                    result = Value.ofFloat(-operand.toLFloat());
+                    result = Value.ofFloat(-operand.asFloat().getValue());
                 } else {
                     throw new RuntimeException("- requires number");
                 }
@@ -338,13 +339,13 @@ public class Evaluator implements Execution {
 
         Value callee = calleeResult.getValue();
 
-        if (!callee.isBlock()) {
+        if (!callee.isCallable()) {
             throw new RuntimeException("Cannot call: " + callee.getClass().getSimpleName());
         }
 
-        BlockValue block = callee.asBlock();
+        CallableValue calleeValue = callee.asCallable();
 
-        return block.call(this, expr.arguments, expr.bindings);
+        return calleeValue.call(this, expr.arguments, expr.bindings);
     }
 
     @Override
@@ -383,4 +384,8 @@ public class Evaluator implements Execution {
         return ValueResult.of(ValueResult.NORMAL, null, blockValue);
     }
 
+    @Override
+    public Object visitParenthesizedExpr(ParenthesizedExpr expr) {
+        return expr.inner.accept(this);
+    }
 }

@@ -1,6 +1,6 @@
 package com.lang.value;
 
-public class FloatValue extends Value {
+public class FloatValue implements Value {
     private static final FloatValue ZERO = new FloatValue(0.0);
     private static final FloatValue ONE = new FloatValue(1.0);
     private static final FloatValue MINUS_ONE = new FloatValue(-1.0);
@@ -16,38 +16,30 @@ public class FloatValue extends Value {
     }
 
     public static FloatValue of(double value) {
-        if (value == 0.0) return ZERO;
-        if (value == 1.0) return ONE;
-        if (value == -1.0) return MINUS_ONE;
-        if (value == 2.0) return TWO;
-        if (value == 0.5) return HALF;
-        if (value == Math.PI) return PI;
-        if (value == Math.E) return E;
+        if (value == 0.0)
+            return ZERO;
+        if (value == 1.0)
+            return ONE;
+        if (value == -1.0)
+            return MINUS_ONE;
+        if (value == 2.0)
+            return TWO;
+        if (value == 0.5)
+            return HALF;
+        if (value == Math.PI)
+            return PI;
+        if (value == Math.E)
+            return E;
         return new FloatValue(value);
     }
 
     @Override
-    public boolean equalsFloat(Value value) {
-        return value != null && value.isFloat() && equalsLFloat(value.toLFloat());
+    public boolean valueEquals(Value value) {
+        return value != null && value.isFloat() && Double.compare(this.value, value.asFloat().getValue()) == 0;
     }
 
     @Override
-    public boolean equalsLFloat(double value) {
-        return Double.compare(this.value, value) == 0;
-    }
-
-    @Override
-    public long toLInt() {
-        return (long) value;
-    }
-
-    @Override
-    public double toLFloat() {
-        return value;
-    }
-
-    @Override
-    public String toLString() {
+    public String valueToString() {
         if (value == (long) value) {
             return Long.toString((long) value);
         }

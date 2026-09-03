@@ -24,22 +24,6 @@ public abstract class TokenStream extends ObjectBuffer {
         return (Token) offset(0);
     }
 
-    public Token peekNext() {
-        return (Token) offset(1);
-    }
-
-    public Token peekNextNext() {
-        return (Token) offset(2);
-    }
-
-    public Token peekBack() {
-        return (Token) offset(-1);
-    }
-
-    public Token peekBackBack() {
-        return (Token) offset(-2);
-    }
-
     public Token advance() {
         return (Token) next();
     }
@@ -56,22 +40,6 @@ public abstract class TokenStream extends ObjectBuffer {
     public boolean checkIndex(int index, int type) {
         Token t = (Token) offset(index);
         return t != null && t.type == type;
-    }
-
-    public boolean checkNext(int type) {
-        return checkIndex(1, type);
-    }
-
-    public boolean checkNextNext(int type) {
-        return checkIndex(2, type);
-    }
-
-    public boolean checkBack(int type) {
-        return checkIndex(-1, type);
-    }
-
-    public boolean checkBackBack(int type) {
-        return checkIndex(-2, type);
     }
 
     public boolean checkAny(int... types) {
@@ -100,22 +68,6 @@ public abstract class TokenStream extends ObjectBuffer {
         return false;
     }
 
-    public boolean checkNextAny(int... types) {
-        return checkIndexAny(1, types);
-    }
-
-    public boolean checkNextNextAny(int... types) {
-        return checkIndexAny(2, types);
-    }
-
-    public boolean checkBackAny(int... types) {
-        return checkIndexAny(-1, types);
-    }
-
-    public boolean checkBackBackAny(int... types) {
-        return checkIndexAny(-2, types);
-    }
-
     public boolean checkSequence(int... types) {
         if (types == null || types.length == 0)
             return true;
@@ -134,14 +86,6 @@ public abstract class TokenStream extends ObjectBuffer {
                 return false;
         }
         return true;
-    }
-
-    public boolean checkNextSequence(int... types) {
-        return checkIndexSequence(1, types);
-    }
-
-    public boolean checkBackSequence(int... types) {
-        return checkIndexSequence(-1, types);
     }
 
     public boolean match(int type) {

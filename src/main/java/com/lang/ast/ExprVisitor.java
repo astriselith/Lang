@@ -16,4 +16,6 @@ public interface ExprVisitor {
     Object visitMemberAccessExpr(MemberAccessExpr expr);
 
     Object visitBlockExpr(BlockExpr expr);
+
+    Object visitParenthesizedExpr(ParenthesizedExpr expr);
 }

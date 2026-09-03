@@ -129,4 +129,9 @@ public class Printer implements ExprVisitor {
 
         return sb.toString();
     }
+
+    @Override
+    public Object visitParenthesizedExpr(ParenthesizedExpr expr) {
+        return "(" + expr.inner.accept(this) + ")";
+    }
 }
